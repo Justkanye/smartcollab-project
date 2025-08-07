@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -46,5 +48,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return null
   }
 
-  return <>{children}</>
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <AppSidebar />
+      <main className="flex-1 overflow-hidden">{children}</main>
+    </SidebarProvider>
+  );
 }

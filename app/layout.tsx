@@ -2,8 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from 'next/font/google'
 import "./globals.css"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/auth-context"
 import { OrganizationProvider } from "@/contexts/organization-context"
@@ -40,10 +38,7 @@ export default function RootLayout({
 function MainContent({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-      <SidebarProvider defaultOpen={true}>
-        <AppSidebar />
-        <main className="flex-1 overflow-hidden">{children}</main>
-      </SidebarProvider>
+      {children}
     </ProtectedRoute>
   )
 }
