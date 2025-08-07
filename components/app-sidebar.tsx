@@ -19,8 +19,11 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { OrganizationSwitcher } from "@/components/organization-switcher"
+import { NotificationCenter } from "@/components/notifications"
 import Link from "next/link"
 import { useAuth } from '@/contexts/auth-context'
+import { useOrganization } from '@/contexts/organization-context'
 
 const navigation = [
   {
@@ -77,48 +80,26 @@ const navigation = [
 
 export function AppSidebar() {
   const { user, signOut } = useAuth()
+  const { currentOrganization, isAdmin } = useOrganization()
 
   return (
     <Sidebar className="border-r">
-      <SidebarHeader className="border-b">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-sidebar-primary-foreground">
-                    <Zap className="size-4" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">SmartCollab</span>
-                    <span className="truncate text-xs">Team Workspace</span>
-                  </div>
-                  <ChevronDown className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-(--radix-popper-anchor-width) min-w-56 rounded-lg" align="start">
-                <DropdownMenuItem>
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-sidebar-primary-foreground">
-                      <Zap className="size-4" />
-                    </div>
-                    <div className="grid flex-1">
-                      <span className="font-medium">SmartCollab</span>
-                      <span className="text-xs text-muted-foreground">Team Workspace</span>
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Workspace
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="border-b p-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-sidebar-primary-foreground">
+                <Zap className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">SmartCollab</span>
+                <span className="truncate text-xs">Team Workspace</span>
+              </div>
+            </div>
+            <NotificationCenter />
+          </div>
+          <OrganizationSwitcher />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -193,10 +174,20 @@ export function AppSidebar() {
                 align="end"
                 sideOffset={4}
               >
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Profile Settings
+                  </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/organizations/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Organization Settings
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={signOut}>
                   Sign out
                 </DropdownMenuItem>

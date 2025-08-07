@@ -77,6 +77,149 @@ export type Database = {
           updated_at?: string
         }
       }
+      organizations: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          logo_url: string | null
+          settings: any
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          logo_url?: string | null
+          settings?: any
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          logo_url?: string | null
+          settings?: any
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      organization_members: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          role: string
+          permissions: any
+          invited_by: string | null
+          invited_at: string
+          joined_at: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          role?: string
+          permissions?: any
+          invited_by?: string | null
+          invited_at?: string
+          joined_at?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          role?: string
+          permissions?: any
+          invited_by?: string | null
+          invited_at?: string
+          joined_at?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      organization_invitations: {
+        Row: {
+          id: string
+          organization_id: string
+          email: string
+          role: string
+          permissions: any
+          invited_by: string
+          token: string
+          expires_at: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          email: string
+          role?: string
+          permissions?: any
+          invited_by: string
+          token: string
+          expires_at: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          email?: string
+          role?: string
+          permissions?: any
+          invited_by?: string
+          token?: string
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          title: string
+          message: string | null
+          data: any
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          title: string
+          message?: string | null
+          data?: any
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          title?: string
+          message?: string | null
+          data?: any
+          read?: boolean
+          created_at?: string
+        }
+      }
       projects: {
         Row: {
           id: string
@@ -87,6 +230,7 @@ export type Database = {
           progress: number
           start_date: string | null
           due_date: string | null
+          organization_id: string | null
           created_by: string
           created_at: string
           updated_at: string
@@ -100,6 +244,7 @@ export type Database = {
           progress?: number
           start_date?: string | null
           due_date?: string | null
+          organization_id?: string | null
           created_by: string
           created_at?: string
           updated_at?: string
@@ -113,6 +258,7 @@ export type Database = {
           progress?: number
           start_date?: string | null
           due_date?: string | null
+          organization_id?: string | null
           created_by?: string
           created_at?: string
           updated_at?: string
@@ -126,6 +272,7 @@ export type Database = {
           status: string
           priority: string
           project_id: string | null
+          organization_id: string | null
           assigned_to: string | null
           created_by: string
           due_date: string | null
@@ -140,6 +287,7 @@ export type Database = {
           status?: string
           priority?: string
           project_id?: string | null
+          organization_id?: string | null
           assigned_to?: string | null
           created_by: string
           due_date?: string | null
@@ -154,6 +302,7 @@ export type Database = {
           status?: string
           priority?: string
           project_id?: string | null
+          organization_id?: string | null
           assigned_to?: string | null
           created_by?: string
           due_date?: string | null
@@ -186,6 +335,40 @@ export type Database = {
         }
       }
     }
+    Functions: {
+      create_organization_with_admin: {
+        Args: {
+          org_name: string
+          org_description?: string
+          org_logo_url?: string
+        }
+        Returns: string
+      }
+      invite_user_to_organization: {
+        Args: {
+          org_id: string
+          invite_email: string
+          invite_role?: string
+          invite_permissions?: any
+        }
+        Returns: string
+      }
+      accept_organization_invitation: {
+        Args: {
+          invitation_token: string
+        }
+        Returns: boolean
+      }
+      update_organization_member_role: {
+        Args: {
+          org_id: string
+          member_user_id: string
+          new_role: string
+          new_permissions?: any
+        }
+        Returns: boolean
+      }
+    }
   }
 }
 
@@ -202,3 +385,42 @@ export const getSupabaseConfig = () => {
     isValid: isSupabaseConfigured()
   }
 }
+
+// Role definitions and permissions
+export const ORGANIZATION_ROLES = {
+  admin: {
+    name: 'Admin',
+    description: 'Full access to organization settings, members, and all projects',
+    permissions: [
+      'manage_organization',
+      'manage_members',
+      'manage_projects',
+      'manage_tasks',
+      'view_analytics',
+      'manage_settings'
+    ]
+  },
+  member: {
+    name: 'Member',
+    description: 'Can create and manage projects, collaborate on tasks',
+    permissions: [
+      'create_projects',
+      'manage_own_projects',
+      'manage_tasks',
+      'view_projects',
+      'collaborate'
+    ]
+  },
+  guest: {
+    name: 'Guest',
+    description: 'Limited access to view and comment on assigned projects',
+    permissions: [
+      'view_assigned_projects',
+      'view_assigned_tasks',
+      'comment',
+      'update_assigned_tasks'
+    ]
+  }
+} as const
+
+export type OrganizationRole = keyof typeof ORGANIZATION_ROLES

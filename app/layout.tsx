@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/auth-context"
+import { OrganizationProvider } from "@/contexts/organization-context"
 import { ProtectedRoute } from "@/components/protected-route"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -13,7 +14,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "SmartCollab - Project Management",
   description: "Comprehensive project management and team collaboration platform",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -25,7 +26,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <MainContent>{children}</MainContent>
+          <OrganizationProvider>
+            <MainContent>{children}</MainContent>
+          </OrganizationProvider>
         </AuthProvider>
         <Toaster />
       </body>
