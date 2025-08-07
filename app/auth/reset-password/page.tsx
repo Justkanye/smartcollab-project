@@ -1,173 +1,160 @@
-'use client'
+"use client"
 
-import { useState, useEffect, Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { Eye, EyeOff, CheckCircle, XCircle, Lock } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { supabase } from '@/lib/supabase'
-
-interface PasswordStrength {
-  score: number
-  feedback: string[]
-  isValid: boolean
-}
+import { Eye, EyeOff, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 function ResetPasswordForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({
-    score: 0,
-    feedback: [],
-    isValid: false
-  })
-
+  
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const token = searchParams.get('token')
-  const type = searchParams.get('type')
 
   useEffect(() => {
-    if (!token || type !== 'recovery') {
+    if (!token) {
       setError('Invalid or missing reset token. Please request a new password reset.')
     }
-  }, [token, type])
+  }, [token])
 
-  const checkPasswordStrength = (password: string): PasswordStrength => {
-    const feedback: string[] = []
-    let score = 0
-
-    if (password.length >= 8) {
-      score += 1
-    } else {
-      feedback.push('At least 8 characters')
-    }
-
-    if (/[A-Z]/.test(password)) {
-      score += 1
-    } else {
-      feedback.push('One uppercase letter')
-    }
-
-    if (/[a-z]/.test(password)) {
-      score += 1
-    } else {
-      feedback.push('One lowercase letter')
-    }
-
-    if (/\d/.test(password)) {
-      score += 1
-    } else {
-      feedback.push('One number')
-    }
-
-    if (/[^A-Za-z0-9]/.test(password)) {
-      score += 1
-    } else {
-      feedback.push('One special character')
-    }
-
+  const validatePassword = (password: string) => {
+    const minLength = password.length >= 8
+    const hasUpper = /[A-Z]/.test(password)
+    const hasLower = /[a-z]/.test(password)
+    const hasNumber = /\d/.test(password)
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    
     return {
-      score,
-      feedback,
-      isValid: score >= 4
+      minLength,
+      hasUpper,
+      hasLower,
+      hasNumber,
+      hasSpecial,
+      isValid: minLength && hasUpper && hasLower && hasNumber && hasSpecial
     }
   }
 
-  useEffect(() => {
-    if (password) {
-      setPasswordStrength(checkPasswordStrength(password))
-    } else {
-      setPasswordStrength({ score: 0, feedback: [], isValid: false })
-    }
-  }, [password])
+  const passwordValidation = validatePassword(password)
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!token || type !== 'recovery') {
+    if (!token) {
       setError('Invalid reset token')
       return
     }
 
-    if (!passwordStrength.isValid) {
-      setError('Please ensure your password meets all requirements')
+    if (!passwordValidation.isValid) {
+      setError('Password does not meet requirements')
       return
     }
 
-    if (password !== confirmPassword) {
+    if (!passwordsMatch) {
       setError('Passwords do not match')
       return
     }
 
-    setIsLoading(true)
+    setLoading(true)
     setError('')
+    setMessage('')
 
     try {
       const { error } = await supabase.auth.updateUser({
         password: password
       })
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error
 
       setSuccess(true)
+      setMessage('Password updated successfully! You can now sign in with your new password.')
       
       // Redirect to sign in after 3 seconds
       setTimeout(() => {
-        router.push('/auth/signin?message=Password updated successfully')
+        router.push('/auth/signin')
       }, 3000)
-
-    } catch (error: any) {
-      console.error('Password reset error:', error)
-      setError(error.message || 'Failed to reset password. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset password')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const getStrengthColor = (score: number) => {
-    if (score < 2) return 'bg-red-500'
-    if (score < 4) return 'bg-yellow-500'
-    return 'bg-green-500'
-  }
-
-  const getStrengthText = (score: number) => {
-    if (score < 2) return 'Weak'
-    if (score < 4) return 'Medium'
-    return 'Strong'
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Invalid Reset Link</CardTitle>
+            <CardDescription className="text-center">
+              This password reset link is invalid or has expired.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Alert>
+                <XCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Please request a new password reset link to continue.
+                </AlertDescription>
+              </Alert>
+              <div className="flex flex-col space-y-2">
+                <Button asChild>
+                  <Link href="/auth/forgot-password">
+                    Request New Reset Link
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/auth/signin">
+                    Back to Sign In
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <CardTitle className="text-2xl font-bold text-green-600 dark:text-green-400">
-              Password Updated!
-            </CardTitle>
-            <CardDescription>
-              Your password has been successfully updated. You will be redirected to the sign-in page shortly.
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Password Reset Successful</CardTitle>
+            <CardDescription className="text-center">
+              Your password has been updated successfully.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-sm text-muted-foreground">
-              Redirecting you to sign in...
-            </p>
+          <CardContent>
+            <div className="space-y-4">
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {message}
+                </AlertDescription>
+              </Alert>
+              <Button asChild className="w-full">
+                <Link href="/auth/signin">
+                  Continue to Sign In
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -175,37 +162,26 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-            <Lock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Reset Your Password</CardTitle>
-          <CardDescription>
-            Enter your new password below. Make sure it's strong and secure.
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">Reset Your Password</CardTitle>
+          <CardDescription className="text-center">
+            Enter your new password below
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your new password"
                   required
-                  disabled={isLoading}
                 />
                 <Button
                   type="button"
@@ -213,7 +189,6 @@ function ResetPasswordForm() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -224,48 +199,71 @@ function ResetPasswordForm() {
               </div>
               
               {password && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Password strength:</span>
-                    <span className={`font-medium ${
-                      passwordStrength.score < 2 ? 'text-red-600' :
-                      passwordStrength.score < 4 ? 'text-yellow-600' :
-                      'text-green-600'
-                    }`}>
-                      {getStrengthText(passwordStrength.score)}
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    {passwordValidation.minLength ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <XCircle className="h-3 w-3 text-red-500" />
+                    )}
+                    <span className={passwordValidation.minLength ? "text-green-600" : "text-red-600"}>
+                      At least 8 characters
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${getStrengthColor(passwordStrength.score)}`}
-                      style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                    ></div>
+                  <div className="flex items-center gap-2">
+                    {passwordValidation.hasUpper ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <XCircle className="h-3 w-3 text-red-500" />
+                    )}
+                    <span className={passwordValidation.hasUpper ? "text-green-600" : "text-red-600"}>
+                      One uppercase letter
+                    </span>
                   </div>
-                  {passwordStrength.feedback.length > 0 && (
-                    <div className="text-sm text-muted-foreground">
-                      <p>Password must include:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        {passwordStrength.feedback.map((item, index) => (
-                          <li key={index}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {passwordValidation.hasLower ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <XCircle className="h-3 w-3 text-red-500" />
+                    )}
+                    <span className={passwordValidation.hasLower ? "text-green-600" : "text-red-600"}>
+                      One lowercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordValidation.hasNumber ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <XCircle className="h-3 w-3 text-red-500" />
+                    )}
+                    <span className={passwordValidation.hasNumber ? "text-green-600" : "text-red-600"}>
+                      One number
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordValidation.hasSpecial ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <XCircle className="h-3 w-3 text-red-500" />
+                    )}
+                    <span className={passwordValidation.hasSpecial ? "text-green-600" : "text-red-600"}>
+                      One special character
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your new password"
                   required
-                  disabled={isLoading}
                 />
                 <Button
                   type="button"
@@ -273,7 +271,6 @@ function ResetPasswordForm() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  disabled={isLoading}
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -282,19 +279,43 @@ function ResetPasswordForm() {
                   )}
                 </Button>
               </div>
-              {confirmPassword && password !== confirmPassword && (
-                <p className="text-sm text-red-600">Passwords do not match</p>
+              
+              {confirmPassword && (
+                <div className="flex items-center gap-2 text-sm">
+                  {passwordsMatch ? (
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <XCircle className="h-3 w-3 text-red-500" />
+                  )}
+                  <span className={passwordsMatch ? "text-green-600" : "text-red-600"}>
+                    Passwords match
+                  </span>
+                </div>
               )}
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading || !passwordStrength.isValid || password !== confirmPassword}
+            {error && (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {message && (
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || !passwordValidation.isValid || !passwordsMatch}
             >
-              {isLoading ? (
+              {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Updating Password...
                 </>
               ) : (
@@ -303,11 +324,11 @@ function ResetPasswordForm() {
             </Button>
 
             <div className="text-center">
-              <Link
-                href="/auth/signin"
-                className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+              <Link 
+                href="/auth/signin" 
+                className="text-sm text-muted-foreground hover:text-primary"
               >
-                Back to Sign In
+                Back to sign in
               </Link>
             </div>
           </form>
@@ -319,11 +340,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    }>
+    <Suspense fallback={<div>Loading...</div>}>
       <ResetPasswordForm />
     </Suspense>
   )
