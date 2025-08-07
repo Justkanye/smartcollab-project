@@ -37,12 +37,14 @@ export function OrganizationSwitcher() {
           className="w-full justify-between"
         >
           <div className="flex items-center gap-2">
-            <Avatar className="h-5 w-5">
-              <AvatarImage src={currentOrganization?.logo_url || ''} />
-              <AvatarFallback>
-                {currentOrganization?.name?.charAt(0) || 'O'}
-              </AvatarFallback>
-            </Avatar>
+            {!!currentOrganization && (
+              <Avatar className="h-5 w-5">
+                <AvatarImage src={currentOrganization?.logo_url || ''} />
+                <AvatarFallback>
+                  {currentOrganization?.name?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            )}
             <span className="truncate">
               {currentOrganization?.name || 'Select organization'}
             </span>
@@ -88,7 +90,7 @@ export function OrganizationSwitcher() {
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup>
-              <CommandItem asChild>
+              <CommandItem asChild disabled={false}>
                 <Link href="/organizations/new" className="flex items-center">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Organization
