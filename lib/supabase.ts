@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 // Get environment variables with fallbacks and validation
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -30,13 +30,16 @@ try {
 }
 
 // Create and export Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
   }
 })
+
+// Export createClient function for compatibility
+export const createClient = () => supabase
 
 // Export types for TypeScript
 export type Database = {
