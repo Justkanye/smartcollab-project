@@ -1,55 +1,100 @@
-'use client'
+"use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { useProjects } from '@/hooks/use-projects'
-import { useTasks } from '@/hooks/use-tasks'
-import { BarChart3, CheckSquare, Clock, FolderOpen, Plus, TrendingUp } from 'lucide-react'
-import Link from 'next/link'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { BarChart3, CheckSquare, Clock, FolderOpen, Plus, TrendingUp, Users, Calendar } from 'lucide-react'
+import { useProjects } from "@/hooks/use-projects"
+import { useTasks } from "@/hooks/use-tasks"
+import { useRouter } from "next/navigation"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function DashboardPage() {
-  const { projects } = useProjects()
-  const { tasks } = useTasks()
+  const router = useRouter()
+  const { projects, loading: projectsLoading } = useProjects()
+  const { tasks, loading: tasksLoading } = useTasks()
 
   // Calculate statistics
   const activeProjects = projects.filter(p => p.status === 'active').length
-  const totalTasks = tasks.length
   const completedTasks = tasks.filter(t => t.status === 'completed').length
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length
+  const totalTasks = tasks.length
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+  const overdueTasks = tasks.filter(t => {
+    if (!t.due_date || t.status === 'completed') return false
+    return new Date(t.due_date) < new Date()
+  }).length
 
-  // Get recent projects and tasks
+  // Get recent projects (last 3)
   const recentProjects = projects.slice(0, 3)
+  
+  // Get recent tasks (last 5)
   const recentTasks = tasks.slice(0, 5)
 
-  const getStatusColor = (status: string) => {
+  const handleNewProject = () => {
+    router.push('/projects?new=true')
+  }
+
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active':
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+        return 'default'
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-      case 'on_hold':
+        return 'secondary'
+      case 'planning':
       case 'todo':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+        return 'outline'
+      case 'on-hold':
+        return 'destructive'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+        return 'outline'
     }
   }
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBadgeVariant = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+        return 'destructive'
       case 'medium':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+        return 'default'
       case 'low':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+        return 'secondary'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+        return 'outline'
     }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  if (projectsLoading || tasksLoading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -57,15 +102,13 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center space-x-2">
-          <Button asChild>
-            <Link href="/projects/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Project
-            </Link>
+          <Button onClick={handleNewProject}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
           </Button>
         </div>
       </div>
-
+      
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -76,10 +119,11 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{activeProjects}</div>
             <p className="text-xs text-muted-foreground">
-              +2 from last month
+              {projects.length} total projects
             </p>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
@@ -88,10 +132,11 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{totalTasks}</div>
             <p className="text-xs text-muted-foreground">
-              +5 from last week
+              {completedTasks} completed
             </p>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
@@ -99,18 +144,21 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{completionRate}%</div>
-            <Progress value={completionRate} className="mt-2" />
+            <p className="text-xs text-muted-foreground">
+              Task completion rate
+            </p>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">Overdue Tasks</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{inProgressTasks}</div>
+            <div className="text-2xl font-bold text-red-600">{overdueTasks}</div>
             <p className="text-xs text-muted-foreground">
-              Tasks currently active
+              Need attention
             </p>
           </CardContent>
         </Card>
@@ -122,27 +170,51 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Recent Projects</CardTitle>
             <CardDescription>
-              Your latest projects and their current status
+              Your most recently updated projects
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentProjects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {project.name}
-                    </p>
+          <CardContent className="space-y-4">
+            {recentProjects.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <FolderOpen className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <p>No projects yet</p>
+                <Button variant="outline" className="mt-2" onClick={handleNewProject}>
+                  Create your first project
+                </Button>
+              </div>
+            ) : (
+              recentProjects.map((project) => (
+                <div key={project.id} className="flex items-center space-x-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium leading-none">
+                        {project.name}
+                      </p>
+                      <Badge variant={getStatusBadgeVariant(project.status)}>
+                        {project.status}
+                      </Badge>
+                      <Badge variant={getPriorityBadgeVariant(project.priority)}>
+                        {project.priority}
+                      </Badge>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      {project.description}
+                      {project.description || 'No description'}
                     </p>
+                    {project.progress !== undefined && (
+                      <div className="flex items-center gap-2">
+                        <Progress value={project.progress} className="flex-1" />
+                        <span className="text-xs text-muted-foreground">
+                          {project.progress}%
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <Badge className={getStatusColor(project.status)}>
-                    {project.status.replace('_', ' ')}
-                  </Badge>
+                  <div className="text-xs text-muted-foreground">
+                    {formatDate(project.updated_at)}
+                  </div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -151,29 +223,45 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Recent Tasks</CardTitle>
             <CardDescription>
-              Latest tasks across all projects
+              Your latest task updates
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentTasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {task.title}
-                    </p>
+          <CardContent className="space-y-4">
+            {recentTasks.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <CheckSquare className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <p>No tasks yet</p>
+                <Button variant="outline" className="mt-2" onClick={() => router.push('/tasks')}>
+                  View all tasks
+                </Button>
+              </div>
+            ) : (
+              recentTasks.map((task) => (
+                <div key={task.id} className="flex items-center space-x-4">
+                  <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(task.status)} variant="secondary">
+                      <p className="text-sm font-medium leading-none">
+                        {task.title}
+                      </p>
+                      <Badge variant={getStatusBadgeVariant(task.status)}>
                         {task.status.replace('_', ' ')}
                       </Badge>
-                      <Badge className={getPriorityColor(task.priority)} variant="outline">
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs">
                         {task.priority}
                       </Badge>
+                      {task.due_date && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(task.due_date)}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
