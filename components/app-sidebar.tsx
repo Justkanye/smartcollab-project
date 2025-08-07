@@ -90,7 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     router.push('/settings')
   }
 
-  const handleWorkspaceSettings = () => {
+  const handleOrganizationSettings = () => {
     if (currentOrganization) {
       router.push('/organizations/settings')
     }
@@ -209,9 +209,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   Account Settings
                 </DropdownMenuItem>
                 {currentOrganization && (
-                  <DropdownMenuItem onClick={handleWorkspaceSettings} className="gap-2">
+                  <DropdownMenuItem onClick={handleOrganizationSettings} className="gap-2">
                     <Building2 className="h-4 w-4" />
-                    Workspace Settings
+                    Organization Settings
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />

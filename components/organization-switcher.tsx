@@ -21,6 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useOrganizations } from "@/hooks/use-organizations"
+import { CreateOrganizationDialog } from "@/components/create-organization-dialog"
 
 interface OrganizationSwitcherProps {
   className?: string
@@ -29,24 +30,23 @@ interface OrganizationSwitcherProps {
 export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
-  const { organizations, currentOrganization, setCurrentOrganization, loading } = useOrganizations()
+  const { organizations, currentOrganization, switchOrganization, loading } = useOrganizations()
 
   const handleSelect = (organizationId: string) => {
-    const org = organizations.find(o => o.id === organizationId)
-    if (org) {
-      setCurrentOrganization(org)
+    if (organizationId === 'personal') {
+      switchOrganization(null)
+    } else {
+      const org = organizations.find(o => o.id === organizationId)
+      if (org) {
+        switchOrganization(org)
+      }
     }
     setOpen(false)
   }
 
-  const handleCreateWorkspace = () => {
-    setOpen(false)
-    router.push('/organizations/new')
-  }
-
-  // Default to "My Workspace" if no current organization
-  const displayName = currentOrganization?.name || "My Workspace"
-  const displayDescription = currentOrganization?.description || "Personal workspace"
+  // Default to "My Organization" if no current organization
+  const displayName = currentOrganization?.name || "My Organization"
+  const displayDescription = currentOrganization?.description || "Personal organization"
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -72,9 +72,9 @@ export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search workspaces..." />
+          <CommandInput placeholder="Search organizations..." />
           <CommandList>
-            <CommandEmpty>No workspace found.</CommandEmpty>
+            <CommandEmpty>No organization found.</CommandEmpty>
             <CommandGroup heading="Personal">
               <CommandItem
                 onSelect={() => handleSelect('personal')}
@@ -84,8 +84,8 @@ export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
                   M
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">My Workspace</span>
-                  <span className="text-xs text-muted-foreground">Personal workspace</span>
+                  <span className="text-sm font-medium">My Organization</span>
+                  <span className="text-xs text-muted-foreground">Personal organization</span>
                 </div>
                 <Check
                   className={cn(
@@ -124,12 +124,14 @@ export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
             )}
             <CommandSeparator />
             <CommandGroup>
-              <CommandItem onSelect={handleCreateWorkspace} className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-sm border border-dashed">
-                  <Plus className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-medium">Create Workspace</span>
-              </CommandItem>
+              <CreateOrganizationDialog>
+                <CommandItem onSelect={() => setOpen(false)} className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-sm border border-dashed">
+                    <Plus className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">Create Organization</span>
+                </CommandItem>
+              </CreateOrganizationDialog>
             </CommandGroup>
           </CommandList>
         </Command>

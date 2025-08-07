@@ -9,6 +9,8 @@ import { useProjects } from "@/hooks/use-projects"
 import { useTasks } from "@/hooks/use-tasks"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CreateProjectDialog } from "@/components/create-project-dialog"
+import { CreateTaskDialog } from "@/components/create-task-dialog"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -17,11 +19,11 @@ export default function DashboardPage() {
 
   // Calculate statistics
   const activeProjects = projects.filter(p => p.status === 'active').length
-  const completedTasks = tasks.filter(t => t.status === 'completed').length
+  const completedTasks = tasks.filter(t => t.status === 'Done').length
   const totalTasks = tasks.length
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
   const overdueTasks = tasks.filter(t => {
-    if (!t.due_date || t.status === 'completed') return false
+    if (!t.due_date || t.status === 'Done') return false
     return new Date(t.due_date) < new Date()
   }).length
 
@@ -31,19 +33,16 @@ export default function DashboardPage() {
   // Get recent tasks (last 5)
   const recentTasks = tasks.slice(0, 5)
 
-  const handleNewProject = () => {
-    router.push('/projects?new=true')
-  }
-
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active':
-      case 'in_progress':
+      case 'In Progress':
         return 'default'
       case 'completed':
+      case 'Done':
         return 'secondary'
       case 'planning':
-      case 'todo':
+      case 'To Do':
         return 'outline'
       case 'on-hold':
         return 'destructive'
@@ -55,10 +54,13 @@ export default function DashboardPage() {
   const getPriorityBadgeVariant = (priority: string) => {
     switch (priority) {
       case 'high':
+      case 'High':
         return 'destructive'
       case 'medium':
+      case 'Medium':
         return 'default'
       case 'low':
+      case 'Low':
         return 'secondary'
       default:
         return 'outline'
@@ -102,10 +104,18 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center space-x-2">
-          <Button onClick={handleNewProject}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Project
-          </Button>
+          <CreateTaskDialog>
+            <Button variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              New Task
+            </Button>
+          </CreateTaskDialog>
+          <CreateProjectDialog>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </Button>
+          </CreateProjectDialog>
         </div>
       </div>
       
@@ -178,9 +188,11 @@ export default function DashboardPage() {
               <div className="text-center py-6 text-muted-foreground">
                 <FolderOpen className="mx-auto h-12 w-12 mb-4 opacity-50" />
                 <p>No projects yet</p>
-                <Button variant="outline" className="mt-2" onClick={handleNewProject}>
-                  Create your first project
-                </Button>
+                <CreateProjectDialog>
+                  <Button variant="outline" className="mt-2">
+                    Create your first project
+                  </Button>
+                </CreateProjectDialog>
               </div>
             ) : (
               recentProjects.map((project) => (
@@ -231,9 +243,11 @@ export default function DashboardPage() {
               <div className="text-center py-6 text-muted-foreground">
                 <CheckSquare className="mx-auto h-12 w-12 mb-4 opacity-50" />
                 <p>No tasks yet</p>
-                <Button variant="outline" className="mt-2" onClick={() => router.push('/tasks')}>
-                  View all tasks
-                </Button>
+                <CreateTaskDialog>
+                  <Button variant="outline" className="mt-2">
+                    Create your first task
+                  </Button>
+                </CreateTaskDialog>
               </div>
             ) : (
               recentTasks.map((task) => (

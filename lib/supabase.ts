@@ -6,7 +6,8 @@ export const getSupabaseConfig = () => {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables')
+    console.warn('Missing Supabase environment variables')
+    return null
   }
 
   return { supabaseUrl, supabaseAnonKey }
@@ -15,11 +16,13 @@ export const getSupabaseConfig = () => {
 // Create Supabase client
 export const createClient = () => {
   try {
-    const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig()
+    const config = getSupabaseConfig()
+    if (!config) return null
+    
+    const { supabaseUrl, supabaseAnonKey } = config
     return createSupabaseClient(supabaseUrl, supabaseAnonKey)
   } catch (error) {
     console.error('Failed to create Supabase client:', error)
-    // Return a mock client for development
     return null
   }
 }
@@ -29,14 +32,44 @@ export const supabase = createClient()
 
 // Organization roles
 export const ORGANIZATION_ROLES = {
-  ADMIN: 'admin',
-  MEMBER: 'member',
-  GUEST: 'guest'
+  admin: {
+    name: 'Admin',
+    description: 'Full access to organization settings, members, and all projects',
+    permissions: [
+      'manage_organization',
+      'manage_members',
+      'manage_projects',
+      'manage_tasks',
+      'view_analytics',
+      'manage_settings'
+    ]
+  },
+  member: {
+    name: 'Member',
+    description: 'Can create and manage projects, collaborate on tasks',
+    permissions: [
+      'create_projects',
+      'manage_own_projects',
+      'manage_tasks',
+      'view_projects',
+      'collaborate'
+    ]
+  },
+  guest: {
+    name: 'Guest',
+    description: 'Limited access to view and comment on assigned projects',
+    permissions: [
+      'view_assigned_projects',
+      'view_assigned_tasks',
+      'comment',
+      'update_assigned_tasks'
+    ]
+  }
 } as const
 
-export type OrganizationRole = typeof ORGANIZATION_ROLES[keyof typeof ORGANIZATION_ROLES]
+export type OrganizationRole = keyof typeof ORGANIZATION_ROLES
 
-// Database types
+// Database types - Fixed to match actual database schema
 export interface Database {
   public: {
     Tables: {
@@ -73,7 +106,7 @@ export interface Database {
           description: string | null
           created_at: string
           updated_at: string
-          owner_id: string
+          created_by: string // Fixed: use created_by instead of owner_id
         }
         Insert: {
           id?: string
@@ -81,7 +114,7 @@ export interface Database {
           description?: string | null
           created_at?: string
           updated_at?: string
-          owner_id: string
+          created_by: string // Fixed: use created_by instead of owner_id
         }
         Update: {
           id?: string
@@ -89,7 +122,7 @@ export interface Database {
           description?: string | null
           created_at?: string
           updated_at?: string
-          owner_id?: string
+          created_by?: string // Fixed: use created_by instead of owner_id
         }
       }
       organization_members: {
@@ -100,6 +133,7 @@ export interface Database {
           role: OrganizationRole
           created_at: string
           updated_at: string
+          joined_at: string | null
         }
         Insert: {
           id?: string
@@ -108,6 +142,7 @@ export interface Database {
           role: OrganizationRole
           created_at?: string
           updated_at?: string
+          joined_at?: string | null
         }
         Update: {
           id?: string
@@ -116,6 +151,7 @@ export interface Database {
           role?: OrganizationRole
           created_at?: string
           updated_at?: string
+          joined_at?: string | null
         }
       }
       projects: {
@@ -130,7 +166,7 @@ export interface Database {
           created_at: string
           updated_at: string
           organization_id: string | null
-          owner_id: string
+          created_by: string
         }
         Insert: {
           id?: string
@@ -143,7 +179,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           organization_id?: string | null
-          owner_id: string
+          created_by: string
         }
         Update: {
           id?: string
@@ -156,7 +192,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           organization_id?: string | null
-          owner_id?: string
+          created_by?: string
         }
       }
       tasks: {
@@ -170,8 +206,8 @@ export interface Database {
           created_at: string
           updated_at: string
           project_id: string | null
-          assignee_id: string | null
-          creator_id: string
+          assigned_to: string | null
+          created_by: string
         }
         Insert: {
           id?: string
@@ -183,8 +219,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           project_id?: string | null
-          assignee_id?: string | null
-          creator_id: string
+          assigned_to?: string | null
+          created_by: string
         }
         Update: {
           id?: string
@@ -196,8 +232,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           project_id?: string | null
-          assignee_id?: string | null
-          creator_id?: string
+          assigned_to?: string | null
+          created_by?: string
         }
       }
     }
