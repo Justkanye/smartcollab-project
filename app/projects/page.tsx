@@ -211,9 +211,9 @@ export default function ProjectsPage() {
                       }
                     </span>
                   </div>
-                  {project.end_date && (
+                  {project.due_date && (
                     <div className="flex items-center gap-1">
-                      <span>Due: {formatDate(project.end_date)}</span>
+                      <span>Due: {formatDate(project.due_date)}</span>
                     </div>
                   )}
                 </div>

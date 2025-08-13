@@ -4,24 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { useOrganizations } from '@/hooks/use-organizations'
-
-export interface Task {
-  id: string
-  title: string
-  description: string | null
-  status: 'To Do' | 'In Progress' | 'In Review' | 'Done'
-  priority: 'Low' | 'Medium' | 'High'
-  due_date: string | null
-  created_at: string
-  updated_at: string
-  project_id: string | null
-  assigned_to: string | null
-  created_by: string
-  project?: {
-    id: string
-    name: string
-  }
-}
+import { Task } from '@/types'
 
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([])
