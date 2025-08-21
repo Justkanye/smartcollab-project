@@ -10,7 +10,7 @@ export type TokensInput = {
 
 export const setCookie = async ({ name, value, expiration }: TokensInput) => {
   const cookieStore = await cookies();
-  cookieStore.set(name, value, {
+  await cookieStore.set(name, value, {
     httpOnly: true,
     sameSite: true,
     ...(expiration

@@ -3,13 +3,14 @@
 import { cookies } from "next/headers";
 
 import { Project } from "@/types";
+import { getCookieAsync } from "./cookie.actions";
 import { createClient } from "@/lib/superbase.server";
 import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
-import { getCookieAsync, setCookie } from "./cookie.actions";
 
 export const fetchProjects = async (): Promise<{
   data: Project[];
   error: string | null;
+  currentOrganizationId?: string;
 }> => {
   try {
     const supabase = await createClient();
@@ -40,6 +41,7 @@ export const fetchProjects = async (): Promise<{
       CURRENT_ORGANIZATION_COOKIE
     );
 
+    let currentOrganizationId = "";
     // Filter by organization if one is selected
     if (currentOrganizationCookie) {
       const currentOrganization = await supabase
@@ -95,11 +97,12 @@ export const fetchProjects = async (): Promise<{
             };
           }
 
-          setCookie({
-            name: CURRENT_ORGANIZATION_COOKIE,
-            value: newOrganization.id,
-            expiration: 60 * 60 * 24 * 7,
-          });
+          // await setCookie({
+          //   name: CURRENT_ORGANIZATION_COOKIE,
+          //   value: newOrganization.id,
+          //   expiration: 60 * 60 * 24 * 7,
+          // });
+          currentOrganizationId = newOrganization.id;
           query = query.eq("organization_id", newOrganization.id);
         } else {
           console.error(
@@ -113,11 +116,12 @@ export const fetchProjects = async (): Promise<{
         }
       } else {
         // set current organization cookie
-        setCookie({
-          name: CURRENT_ORGANIZATION_COOKIE,
-          value: currentOrganization.data.id,
-          expiration: 60 * 60 * 24 * 7,
-        });
+        // await setCookie({
+        //   name: CURRENT_ORGANIZATION_COOKIE,
+        //   value: currentOrganization.data.id,
+        //   expiration: 60 * 60 * 24 * 7,
+        // });
+        currentOrganizationId = currentOrganization.data.id;
         query = query.eq("organization_id", currentOrganization.data.id);
       }
     }
@@ -137,6 +141,7 @@ export const fetchProjects = async (): Promise<{
       return {
         data: data || [],
         error: null,
+        currentOrganizationId,
       };
     }
   } catch (err) {
