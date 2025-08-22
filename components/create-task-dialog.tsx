@@ -65,6 +65,15 @@ export function CreateTaskDialog({
       return;
     }
 
+    if (!formData.project_id) {
+      toast({
+        title: "Error",
+        description: "Project is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -78,7 +87,7 @@ export function CreateTaskDialog({
           | "Done",
         priority: formData.priority as "Low" | "Medium" | "High",
         due_date: formData.due_date || null,
-        project_id: formData.project_id || null,
+        project_id: formData.project_id,
         assigned_to: formData.assigned_to || null,
         created_by: "", // Will be set by the hook
       });

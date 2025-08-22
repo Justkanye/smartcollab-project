@@ -7,7 +7,17 @@ import { getCookieAsync } from "./cookie.actions";
 import { createClient } from "@/lib/superbase.server";
 import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
 
-export const fetchProjects = async (): Promise<{
+interface FetchProjectsParams {
+  query?: string;
+  status?: string;
+  priority?: string;
+}
+
+export const fetchProjects = async ({
+  query,
+  status,
+  priority,
+}: FetchProjectsParams = {}): Promise<{
   data: Project[];
   error: string | null;
   currentOrganizationId?: string;
@@ -32,8 +42,28 @@ export const fetchProjects = async (): Promise<{
       };
     }
 
-    // Simple query without complex joins
-    let query = supabase.from("projects").select("*").eq("created_by", user.id);
+    // Start building the query
+    let queryBuilder = supabase
+      .from("projects")
+      .select("*")
+      .eq("created_by", user.id);
+
+    // Apply text search if query exists
+    if (query) {
+      queryBuilder = queryBuilder.or(
+        `name.ilike.%${query}%,description.ilike.%${query}%`
+      );
+    }
+
+    // Apply status filter if specified
+    if (status) {
+      queryBuilder = queryBuilder.eq("status", status);
+    }
+
+    // Apply priority filter if specified
+    if (priority) {
+      queryBuilder = queryBuilder.eq("priority", priority);
+    }
 
     // get currentOrganization from cookies
     const cookieStore = await cookies();
@@ -62,7 +92,7 @@ export const fetchProjects = async (): Promise<{
         };
       }
 
-      query = query.eq("organization_id", currentOrganization.data.id);
+      queryBuilder = queryBuilder.eq("organization_id", currentOrganization.data.id);
     } else {
       const currentOrganization = await supabase
         .from("organizations")
@@ -103,7 +133,7 @@ export const fetchProjects = async (): Promise<{
           //   expiration: 60 * 60 * 24 * 7,
           // });
           currentOrganizationId = newOrganization.id;
-          query = query.eq("organization_id", newOrganization.id);
+          queryBuilder = queryBuilder.eq("organization_id", newOrganization.id);
         } else {
           console.error(
             "Error fetching current organization:",
@@ -122,11 +152,11 @@ export const fetchProjects = async (): Promise<{
         //   expiration: 60 * 60 * 24 * 7,
         // });
         currentOrganizationId = currentOrganization.data.id;
-        query = query.eq("organization_id", currentOrganization.data.id);
+        queryBuilder = queryBuilder.eq("organization_id", currentOrganization.data.id);
       }
     }
 
-    const { data, error: fetchError } = await query.order("updated_at", {
+    const { data, error: fetchError } = await queryBuilder.order("updated_at", {
       ascending: false,
     });
 

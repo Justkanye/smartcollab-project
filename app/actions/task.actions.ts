@@ -3,7 +3,17 @@
 import { Task } from "@/types";
 import { supabase } from "@/lib/supabase";
 
-export const fetchTasks = async (): Promise<{
+interface FetchTasksParams {
+  query?: string;
+  status?: string;
+  priority?: string;
+}
+
+export const fetchTasks = async ({
+  query,
+  status,
+  priority,
+}: FetchTasksParams = {}): Promise<{
   data: Task[];
   error: string | null;
 }> => {
@@ -26,12 +36,33 @@ export const fetchTasks = async (): Promise<{
       };
     }
 
-    // Simple query without joins to avoid recursion issues
-    const { data, error } = await supabase
+    // Start building the query
+    let queryBuilder = supabase
       .from("tasks")
       .select("*")
-      .or(`created_by.eq.${user.id},assigned_to.eq.${user.id}`)
-      .order("updated_at", { ascending: false });
+      .or(`created_by.eq.${user.id},assigned_to.eq.${user.id}`);
+
+    // Apply text search if query exists
+    if (query) {
+      queryBuilder = queryBuilder.or(
+        `title.ilike.%${query}%,description.ilike.%${query}%`
+      );
+    }
+
+    // Apply status filter if specified
+    if (status) {
+      queryBuilder = queryBuilder.eq("status", status);
+    }
+
+    // Apply priority filter if specified
+    if (priority) {
+      queryBuilder = queryBuilder.eq("priority", priority);
+    }
+
+    // Execute the query with ordering
+    const { data, error } = await queryBuilder.order("updated_at", {
+      ascending: false,
+    });
 
     if (error) {
       console.error("Error fetching tasks:", error);
