@@ -1,9 +1,12 @@
+export type Status = "To Do" | "In Progress" | "In Review" | "Done";
+export type Priority = "Low" | "Medium" | "High";
+
 export interface Project {
   id: string;
   name: string;
   description: string | null;
-  status: string;
-  priority: string;
+  status: Status;
+  priority: Priority;
   progress?: number;
   start_date: string | null;
   due_date: string | null;
@@ -17,8 +20,8 @@ export interface Task {
   id: string;
   title: string;
   description: string | null;
-  status: "To Do" | "In Progress" | "In Review" | "Done";
-  priority: "Low" | "Medium" | "High";
+  status: Status;
+  priority: Priority;
   due_date: string | null;
   created_at: string;
   updated_at: string;

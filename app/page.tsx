@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { fetchTasks } from "./actions/task.actions";
 import { Progress } from "@/components/ui/progress";
 import { fetchProjects } from "./actions/project.actions";
@@ -23,6 +23,8 @@ import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
 import SetCookie from "@/components/set-cookie";
+import { getStatusBadgeVariant, getPriorityBadgeVariant } from "@/lib/utils";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const {
@@ -35,7 +37,7 @@ export default async function DashboardPage() {
   console.log(currentOrganizationId);
 
   // Calculate statistics
-  const activeProjects = projects.filter(p => p.status === "active").length;
+  const activeProjects = projects.filter(p => p.status !== "Done").length;
   const completedTasks = tasks.filter(t => t.status === "Done").length;
   const totalTasks = tasks.length;
   const completionRate =
@@ -50,40 +52,6 @@ export default async function DashboardPage() {
 
   // Get recent tasks (last 5)
   const recentTasks = tasks.slice(0, 5);
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "active":
-      case "In Progress":
-        return "default";
-      case "completed":
-      case "Done":
-        return "secondary";
-      case "planning":
-      case "To Do":
-        return "outline";
-      case "on-hold":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
-
-  const getPriorityBadgeVariant = (priority: string) => {
-    switch (priority) {
-      case "high":
-      case "High":
-        return "destructive";
-      case "medium":
-      case "Medium":
-        return "default";
-      case "low":
-      case "Low":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -199,11 +167,19 @@ export default async function DashboardPage() {
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-7'>
         {/* Recent Projects */}
         <Card className='col-span-4'>
-          <CardHeader>
-            <CardTitle>Recent Projects</CardTitle>
-            <CardDescription>
-              Your most recently updated projects
-            </CardDescription>
+          <CardHeader className='flex items-center justify-between'>
+            <div>
+              <CardTitle>Recent Projects</CardTitle>
+              <CardDescription>
+                Your most recently updated projects
+              </CardDescription>
+            </div>
+            <Link
+              href='/projects'
+              className={buttonVariants({ variant: "outline" })}
+            >
+              View all
+            </Link>
           </CardHeader>
           <CardContent className='space-y-4'>
             {recentProjects.length === 0 ? (
@@ -217,13 +193,16 @@ export default async function DashboardPage() {
                 </CreateProjectDialog>
               </div>
             ) : (
-              recentProjects.map(project => (
+              recentProjects.slice(0, 5).map(project => (
                 <div key={project.id} className='flex items-center space-x-4'>
                   <div className='flex-1 space-y-1'>
                     <div className='flex items-center gap-2'>
-                      <p className='text-sm font-medium leading-none'>
+                      <Link
+                        href={`/projects/${project.id}`}
+                        className='text-sm font-medium leading-none'
+                      >
                         {project.name}
-                      </p>
+                      </Link>
                       <Badge variant={getStatusBadgeVariant(project.status)}>
                         {project.status}
                       </Badge>
@@ -257,8 +236,18 @@ export default async function DashboardPage() {
         {/* Recent Tasks */}
         <Card className='col-span-3'>
           <CardHeader>
-            <CardTitle>Recent Tasks</CardTitle>
-            <CardDescription>Your latest task updates</CardDescription>
+            <div className='flex items-center justify-between'>
+              <div>
+                <CardTitle>Recent Tasks</CardTitle>
+                <CardDescription>Your latest task updates</CardDescription>
+              </div>
+              <Link
+                href='/tasks'
+                className={buttonVariants({ variant: "outline" })}
+              >
+                View all
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className='space-y-4'>
             {recentTasks.length === 0 ? (
@@ -276,13 +265,16 @@ export default async function DashboardPage() {
                 </CreateTaskDialog>
               </div>
             ) : (
-              recentTasks.map(task => (
+              recentTasks.slice(0, 10).map(task => (
                 <div key={task.id} className='flex items-center space-x-4'>
                   <div className='flex-1 space-y-1'>
                     <div className='flex items-center gap-2'>
-                      <p className='text-sm font-medium leading-none'>
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className='text-sm font-medium leading-none'
+                      >
                         {task.title}
-                      </p>
+                      </Link>
                       <Badge variant={getStatusBadgeVariant(task.status)}>
                         {task.status.replace("_", " ")}
                       </Badge>

@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { createProject } from "@/app/actions/project.actions";
 import { useRouter } from "next/navigation";
+import { Status, Priority } from "@/types";
 
 interface CreateProjectDialogProps {
   children?: React.ReactNode;
@@ -65,8 +66,8 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
       const { error } = await createProject({
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        status: formData.status,
-        priority: formData.priority,
+        status: formData.status as Status,
+        priority: formData.priority as Priority,
         start_date: formData.start_date || null,
         due_date: formData.due_date || null,
       });

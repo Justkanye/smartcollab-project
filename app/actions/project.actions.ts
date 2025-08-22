@@ -6,6 +6,7 @@ import { Project } from "@/types";
 import { getCookieAsync } from "./cookie.actions";
 import { createClient } from "@/lib/superbase.server";
 import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
+import { notFound } from "next/navigation";
 
 interface FetchProjectsParams {
   query?: string;
@@ -92,7 +93,10 @@ export const fetchProjects = async ({
         };
       }
 
-      queryBuilder = queryBuilder.eq("organization_id", currentOrganization.data.id);
+      queryBuilder = queryBuilder.eq(
+        "organization_id",
+        currentOrganization.data.id
+      );
     } else {
       const currentOrganization = await supabase
         .from("organizations")
@@ -152,7 +156,10 @@ export const fetchProjects = async ({
         //   expiration: 60 * 60 * 24 * 7,
         // });
         currentOrganizationId = currentOrganization.data.id;
-        queryBuilder = queryBuilder.eq("organization_id", currentOrganization.data.id);
+        queryBuilder = queryBuilder.eq(
+          "organization_id",
+          currentOrganization.data.id
+        );
       }
     }
 
@@ -232,6 +239,26 @@ export const createProject = async (
   } catch (err: any) {
     console.log(err);
     console.log(projectData);
+    const errorMessage = err?.message || "An error occurred";
+    return { data: null, error: errorMessage };
+  }
+};
+
+export const fetchProjectById = async (projectId: string) => {
+  try {
+    const supabase = await createClient();
+    if (!supabase) {
+      return { data: null, error: "Supabase client not initialized" };
+    }
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", projectId)
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err: any) {
+    console.log(err);
     const errorMessage = err?.message || "An error occurred";
     return { data: null, error: errorMessage };
   }

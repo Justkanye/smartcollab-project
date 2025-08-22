@@ -93,3 +93,51 @@ export const fetchTasks = async ({
     };
   }
 };
+
+export const getProjectTasks = async (projectId: string) => {
+  try {
+    if (!supabase) {
+      return {
+        data: [],
+        error: null,
+      };
+    }
+
+    const userRes = await supabase.auth.getUser();
+    const user = userRes.data.user;
+
+    // If no user, return empty array
+    if (!user) {
+      return {
+        data: [],
+        error: null,
+      };
+    }
+
+    // Start building the query
+    const { data: tasks, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching tasks:", error);
+      return {
+        data: [],
+        error: null,
+      };
+    } else {
+      return {
+        data: tasks || [],
+        error: null,
+      };
+    }
+  } catch (err) {
+    console.error("Failed to fetch tasks:", err);
+    return {
+      data: [],
+      error: null,
+    };
+  }
+};

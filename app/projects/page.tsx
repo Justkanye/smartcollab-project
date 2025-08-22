@@ -13,8 +13,9 @@ import { SearchBar } from "./_components/search-bar";
 import { ProjectFilters } from "./_components/project-filters";
 import { CreateProjectButton } from "./_components/create-project-button";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
 import { ProjectsSkeleton } from "./_components/projects-skeleton";
+import Link from "next/link";
+import { getStatusBadgeVariant, getPriorityBadgeVariant } from "@/lib/utils";
 
 interface ProjectsPageProps {
   searchParams: {
@@ -32,34 +33,6 @@ export default async function ProjectsPage({
     status: searchParams.status,
     priority: searchParams.priority,
   });
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "active":
-        return "default";
-      case "completed":
-        return "secondary";
-      case "planning":
-        return "outline";
-      case "on-hold":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
-
-  const getPriorityBadgeVariant = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "destructive";
-      case "medium":
-        return "default";
-      case "low":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -105,67 +78,61 @@ export default async function ProjectsPage({
         ) : (
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {projects.map(project => (
-              <Card
-                key={project.id}
-                className='hover:shadow-md transition-shadow'
-              >
-                <CardHeader>
-                  <div className='flex items-start justify-between'>
-                    <div className='space-y-1 flex-1'>
-                      <CardTitle className='text-lg'>{project.name}</CardTitle>
-                      <div className='flex items-center gap-2'>
-                        <Badge variant={getStatusBadgeVariant(project.status)}>
-                          {project.status}
-                        </Badge>
-                        <Badge
-                          variant={getPriorityBadgeVariant(project.priority)}
-                        >
-                          {project.priority}
-                        </Badge>
+              <Link key={project.id} href={`/projects/${project.id}`} className="block">
+                <Card className='hover:shadow-md transition-shadow hover:border-primary/50 h-full'>
+                  <CardHeader>
+                    <div className='flex items-start justify-between'>
+                      <div className='space-y-1 flex-1'>
+                        <CardTitle className='text-lg'>{project.name}</CardTitle>
+                        <div className='flex items-center gap-2'>
+                          <Badge variant={getStatusBadgeVariant(project.status)}>
+                            {project.status}
+                          </Badge>
+                          <Badge variant={getPriorityBadgeVariant(project.priority)}>
+                            {project.priority}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <CardDescription className='line-clamp-2'>
-                    {project.description || "No description provided"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className='space-y-4'>
-                  {project.progress !== undefined && (
-                    <div className='space-y-2'>
-                      <div className='flex items-center justify-between text-sm'>
-                        <span className='text-muted-foreground'>Progress</span>
-                        <span className='font-medium'>{project.progress}%</span>
-                      </div>
-                      <Progress value={project.progress} className='h-2' />
-                    </div>
-                  )}
-
-                  <div className='flex items-center justify-between text-sm text-muted-foreground'>
-                    <div className='flex items-center gap-1'>
-                      <Calendar className='h-4 w-4' />
-                      <span>
-                        {project.start_date
-                          ? formatDate(project.start_date)
-                          : "No start date"}
-                      </span>
-                    </div>
-                    {project.due_date && (
-                      <div className='flex items-center gap-1'>
-                        <span>Due: {formatDate(project.due_date)}</span>
+                    <CardDescription className='line-clamp-2'>
+                      {project.description || "No description provided"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className='space-y-4'>
+                    {project.progress !== undefined && (
+                      <div className='space-y-2'>
+                        <div className='flex items-center justify-between text-sm'>
+                          <span className='text-muted-foreground'>Progress</span>
+                          <span className='font-medium'>{project.progress}%</span>
+                        </div>
+                        <Progress value={project.progress} className='h-2' />
                       </div>
                     )}
-                  </div>
 
-                  <div className='flex items-center justify-between'>
-                    <span className='text-xs text-muted-foreground'>
-                      Updated {formatDate(project.updated_at)}
-                    </span>
-                    <Button variant='outline' size='sm'>
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className='flex items-center justify-between text-sm text-muted-foreground'>
+                      <div className='flex items-center gap-1'>
+                        <Calendar className='h-4 w-4' />
+                        <span>
+                          {project.start_date
+                            ? formatDate(project.start_date)
+                            : "No start date"}
+                        </span>
+                      </div>
+                      {project.due_date && (
+                        <div className='flex items-center gap-1'>
+                          <span>Due: {formatDate(project.due_date)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className='flex items-center justify-between'>
+                      <div className="text-xs text-muted-foreground">
+                        Updated {formatDate(project.updated_at)}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
