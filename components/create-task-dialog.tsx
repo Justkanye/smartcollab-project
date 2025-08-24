@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { useStore } from "@/hooks/use-store";
 import { createTask } from "@/app/actions/task.actions";
+import { useShallow } from "zustand/shallow";
 
 interface CreateTaskDialogProps {
   children?: React.ReactNode;
@@ -48,7 +49,9 @@ export function CreateTaskDialog({
   });
   const { toast } = useToast();
 
-  const projects = useStore(state => state.projects);
+  const [projects, addOrUpdateTask] = useStore(
+    useShallow(state => [state.projects, state.addOrUpdateTask])
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +112,7 @@ export function CreateTaskDialog({
           project_id: projectId || "",
           assigned_to: "",
         });
+        addOrUpdateTask(data);
         setOpen(false);
       }
     } catch (error) {

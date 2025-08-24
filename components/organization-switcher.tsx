@@ -99,7 +99,7 @@ export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
                 <CommandItem
                   key={organization.id}
                   onSelect={() => handleSelect(organization.id)}
-                  className='flex items-center gap-2'
+                  className='flex items-center gap-2 cursor-pointer'
                 >
                   <div className='flex h-6 w-6 items-center justify-center rounded-sm bg-primary text-primary-foreground text-xs font-semibold'>
                     {organization.name.charAt(0).toUpperCase()}
@@ -125,20 +125,13 @@ export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
                 </CommandItem>
               ))}
             </CommandGroup>
-            <CommandSeparator />
+            <CommandSeparator className='my-2' />
             <CommandGroup>
               <CreateOrganizationDialog>
-                <CommandItem
-                  onSelect={() => setOpen(false)}
-                  className='flex items-center gap-2 cursor-pointer'
-                >
-                  <div className='flex h-6 w-6 items-center justify-center rounded-sm border border-dashed'>
-                    <Plus className='h-4 w-4' />
-                  </div>
-                  <span className='text-sm font-medium'>
-                    Create Organization
-                  </span>
-                </CommandItem>
+                <Button className='w-full' variant='secondary'>
+                  <Plus className='mr-2 h-4 w-4' />
+                  Create Organization
+                </Button>
               </CreateOrganizationDialog>
             </CommandGroup>
           </CommandList>

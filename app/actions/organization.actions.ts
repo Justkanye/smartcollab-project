@@ -191,11 +191,12 @@ export async function getCurrentOrganization() {
         .select("*")
         .eq("created_by", user.id)
         .eq("id", currentOrganizationCookie.value)
+        .limit(1)
         .single();
 
       if (currentOrganizationRes.error) {
         console.error(
-          "Error fetching current organization:",
+          "Error fetching current organization::",
           currentOrganizationRes.error
         );
         return await createAndSetCurrentOrg();
@@ -207,6 +208,7 @@ export async function getCurrentOrganization() {
         .from("organizations")
         .select("*")
         .eq("created_by", user.id)
+        .limit(1)
         .single();
 
       if (currentOrganizationRes.error) {
@@ -219,7 +221,7 @@ export async function getCurrentOrganization() {
           return await createAndSetCurrentOrg();
         } else {
           console.error(
-            "Error fetching current organization:",
+            "PGRST116 Error fetching current organization:",
             currentOrganizationRes.error
           );
           return { data: null, error: currentOrganizationRes.error.message };
