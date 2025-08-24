@@ -78,3 +78,23 @@ export const signOut = async () => {
   await supabase.auth.signOut();
   redirect("/auth/signin");
 };
+
+export const getUser = async () => {
+  const supabase = await createClient();
+  try {
+    if (!supabase) {
+      return {
+        data: null,
+        error: "Supabase client not initialized",
+      };
+    }
+
+    const userRes = await supabase.auth.getUser();
+    const user = userRes.data.user;
+
+    return { data: user, error: null };
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return { data: null, error: "User not authenticated" };
+  }
+};

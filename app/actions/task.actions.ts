@@ -1,7 +1,8 @@
 "use server";
 
 import { Task } from "@/types";
-import { supabase } from "@/lib/supabase";
+import { getUser } from "./auth.actions";
+import { createClient } from "@/lib/superbase.server";
 
 interface FetchTasksParams {
   query?: string;
@@ -18,15 +19,8 @@ export const fetchTasks = async ({
   error: string | null;
 }> => {
   try {
-    if (!supabase) {
-      return {
-        data: [],
-        error: null,
-      };
-    }
-
-    const userRes = await supabase.auth.getUser();
-    const user = userRes.data.user;
+    const supabase = await createClient();
+    const { data: user } = await getUser();
 
     // If no user, return empty array
     if (!user) {
@@ -96,15 +90,8 @@ export const fetchTasks = async ({
 
 export const getProjectTasks = async (projectId: string) => {
   try {
-    if (!supabase) {
-      return {
-        data: [],
-        error: null,
-      };
-    }
-
-    const userRes = await supabase.auth.getUser();
-    const user = userRes.data.user;
+    const supabase = await createClient();
+    const { data: user } = await getUser();
 
     // If no user, return empty array
     if (!user) {
@@ -139,5 +126,42 @@ export const getProjectTasks = async (projectId: string) => {
       data: [],
       error: null,
     };
+  }
+};
+
+export const createTask = async (
+  taskData: Omit<Task, "id" | "created_at" | "updated_at">
+) => {
+  try {
+    const supabase = await createClient();
+    const { data: user, error: userError } = await getUser();
+
+    // If no user
+    if (!user || userError) {
+      return {
+        data: null,
+        error: userError || "User not authenticated",
+      };
+    }
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert([
+        {
+          ...taskData,
+          created_by: user.id,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      return { data: null, error: error.message };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error("Failed to create task:", error);
+    return { data: null, error: "Failed to create task" };
   }
 };

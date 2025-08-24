@@ -18,16 +18,15 @@ import Link from "next/link";
 import { getStatusBadgeVariant, getPriorityBadgeVariant } from "@/lib/utils";
 
 interface ProjectsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     query?: string;
     status?: string;
     priority?: string;
-  };
+  }>;
 }
 
-export default async function ProjectsPage({
-  searchParams,
-}: ProjectsPageProps) {
+export default async function ProjectsPage(props: ProjectsPageProps) {
+  const searchParams = await props.searchParams;
   const { data: projects } = await fetchProjects({
     query: searchParams.query,
     status: searchParams.status,
@@ -78,17 +77,27 @@ export default async function ProjectsPage({
         ) : (
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {projects.map(project => (
-              <Link key={project.id} href={`/projects/${project.id}`} className="block">
+              <Link
+                key={project.id}
+                href={`/projects/${project.id}`}
+                className='block'
+              >
                 <Card className='hover:shadow-md transition-shadow hover:border-primary/50 h-full'>
                   <CardHeader>
                     <div className='flex items-start justify-between'>
                       <div className='space-y-1 flex-1'>
-                        <CardTitle className='text-lg'>{project.name}</CardTitle>
+                        <CardTitle className='text-lg'>
+                          {project.name}
+                        </CardTitle>
                         <div className='flex items-center gap-2'>
-                          <Badge variant={getStatusBadgeVariant(project.status)}>
+                          <Badge
+                            variant={getStatusBadgeVariant(project.status)}
+                          >
                             {project.status}
                           </Badge>
-                          <Badge variant={getPriorityBadgeVariant(project.priority)}>
+                          <Badge
+                            variant={getPriorityBadgeVariant(project.priority)}
+                          >
                             {project.priority}
                           </Badge>
                         </div>
@@ -102,8 +111,12 @@ export default async function ProjectsPage({
                     {project.progress !== undefined && (
                       <div className='space-y-2'>
                         <div className='flex items-center justify-between text-sm'>
-                          <span className='text-muted-foreground'>Progress</span>
-                          <span className='font-medium'>{project.progress}%</span>
+                          <span className='text-muted-foreground'>
+                            Progress
+                          </span>
+                          <span className='font-medium'>
+                            {project.progress}%
+                          </span>
                         </div>
                         <Progress value={project.progress} className='h-2' />
                       </div>
@@ -126,7 +139,7 @@ export default async function ProjectsPage({
                     </div>
 
                     <div className='flex items-center justify-between'>
-                      <div className="text-xs text-muted-foreground">
+                      <div className='text-xs text-muted-foreground'>
                         Updated {formatDate(project.updated_at)}
                       </div>
                     </div>

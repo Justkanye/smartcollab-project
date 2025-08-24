@@ -1,12 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
-
 import { Project } from "@/types";
-import { getCookieAsync } from "./cookie.actions";
+import { getUser } from "./auth.actions";
 import { createClient } from "@/lib/superbase.server";
-import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
-import { notFound } from "next/navigation";
+import { getCurrentOrganization } from "./organization.actions";
 
 interface FetchProjectsParams {
   query?: string;
@@ -25,15 +22,7 @@ export const fetchProjects = async ({
 }> => {
   try {
     const supabase = await createClient();
-    if (!supabase) {
-      return {
-        data: [],
-        error: null,
-      };
-    }
-
-    const userRes = await supabase.auth.getUser();
-    const user = userRes.data.user;
+    const { data: user } = await getUser();
 
     // If no user, return empty array
     if (!user) {
@@ -66,102 +55,16 @@ export const fetchProjects = async ({
       queryBuilder = queryBuilder.eq("priority", priority);
     }
 
-    // get currentOrganization from cookies
-    const cookieStore = await cookies();
-    const currentOrganizationCookie = cookieStore.get(
-      CURRENT_ORGANIZATION_COOKIE
-    );
+    const { data: currentOrganization } = await getCurrentOrganization();
 
-    let currentOrganizationId = "";
-    // Filter by organization if one is selected
-    if (currentOrganizationCookie) {
-      const currentOrganization = await supabase
-        .from("organizations")
-        .select("*")
-        .eq("created_by", user.id)
-        .eq("id", currentOrganizationCookie.value)
-        .single();
-
-      if (currentOrganization.error) {
-        console.error(
-          "Error fetching current organization:",
-          currentOrganization.error
-        );
-        return {
-          data: [],
-          error: null,
-        };
-      }
-
-      queryBuilder = queryBuilder.eq(
-        "organization_id",
-        currentOrganization.data.id
-      );
-    } else {
-      const currentOrganization = await supabase
-        .from("organizations")
-        .select("*")
-        .eq("created_by", user.id)
-        .single();
-
-      if (currentOrganization.error) {
-        console.log(
-          "Error fetching current organization:",
-          currentOrganization.error
-        );
-        // if no organization create one
-        if (currentOrganization.error.code === "PGRST116") {
-          const { data: newOrganization, error: createError } = await supabase
-            .from("organizations")
-            .insert([
-              {
-                name: "My Organization",
-                description: "Personal Organization",
-                created_by: user.id,
-              },
-            ])
-            .select()
-            .single();
-
-          if (createError) {
-            console.error("Error creating default organization:", createError);
-            return {
-              data: [],
-              error: null,
-            };
-          }
-
-          // await setCookie({
-          //   name: CURRENT_ORGANIZATION_COOKIE,
-          //   value: newOrganization.id,
-          //   expiration: 60 * 60 * 24 * 7,
-          // });
-          currentOrganizationId = newOrganization.id;
-          queryBuilder = queryBuilder.eq("organization_id", newOrganization.id);
-        } else {
-          console.error(
-            "Error fetching current organization:",
-            currentOrganization.error
-          );
-          return {
-            data: [],
-            error: null,
-          };
-        }
-      } else {
-        // set current organization cookie
-        // await setCookie({
-        //   name: CURRENT_ORGANIZATION_COOKIE,
-        //   value: currentOrganization.data.id,
-        //   expiration: 60 * 60 * 24 * 7,
-        // });
-        currentOrganizationId = currentOrganization.data.id;
-        queryBuilder = queryBuilder.eq(
-          "organization_id",
-          currentOrganization.data.id
-        );
-      }
+    if (!currentOrganization) {
+      return {
+        data: [],
+        error: "No current organization found",
+      };
     }
+
+    queryBuilder = queryBuilder.eq("organization_id", currentOrganization?.id);
 
     const { data, error: fetchError } = await queryBuilder.order("updated_at", {
       ascending: false,
@@ -178,7 +81,7 @@ export const fetchProjects = async ({
       return {
         data: data || [],
         error: null,
-        currentOrganizationId,
+        currentOrganizationId: currentOrganization?.id,
       };
     }
   } catch (err) {
@@ -199,11 +102,7 @@ export const createProject = async (
 ) => {
   try {
     const supabase = await createClient();
-    if (!supabase) {
-      return { data: null, error: "Supabase client not initialized" };
-    }
-    const userRes = await supabase.auth.getUser();
-    const user = userRes.data.user;
+    const { data: user } = await getUser();
 
     if (!user) {
       return {
@@ -212,12 +111,13 @@ export const createProject = async (
       };
     }
 
-    const currentOrganizationCookie = await getCookieAsync(
-      CURRENT_ORGANIZATION_COOKIE
-    );
-    let currentOrganization = null;
-    if (currentOrganizationCookie) {
-      currentOrganization = currentOrganizationCookie.value;
+    const { data: currentOrganization } = await getCurrentOrganization();
+
+    if (!currentOrganization) {
+      return {
+        data: null,
+        error: "No current organization found",
+      };
     }
 
     const { data, error } = await supabase
@@ -226,7 +126,7 @@ export const createProject = async (
         {
           ...projectData,
           created_by: user.id,
-          organization_id: currentOrganization,
+          organization_id: currentOrganization.id,
         },
       ])
       .select()
@@ -234,7 +134,6 @@ export const createProject = async (
 
     if (error) throw error;
 
-    await fetchProjects();
     return { data, error: null };
   } catch (err: any) {
     console.log(err);
@@ -247,8 +146,13 @@ export const createProject = async (
 export const fetchProjectById = async (projectId: string) => {
   try {
     const supabase = await createClient();
-    if (!supabase) {
-      return { data: null, error: "Supabase client not initialized" };
+    const { data: user } = await getUser();
+
+    if (!user) {
+      return {
+        data: null,
+        error: "User not authenticated",
+      };
     }
     const { data, error } = await supabase
       .from("projects")

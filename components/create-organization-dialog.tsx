@@ -14,9 +14,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useOrganizations } from "@/hooks/use-organizations"
 import { useToast } from "@/hooks/use-toast"
 import { Plus } from 'lucide-react'
+import { createOrganization } from "@/app/actions/organization.actions"
 
 interface CreateOrganizationDialogProps {
   children?: React.ReactNode
@@ -30,7 +30,6 @@ export function CreateOrganizationDialog({ children }: CreateOrganizationDialogP
     description: "",
   })
 
-  const { createOrganization } = useOrganizations()
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {

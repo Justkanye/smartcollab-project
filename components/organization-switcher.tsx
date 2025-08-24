@@ -1,11 +1,9 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -15,12 +13,17 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useOrganizations } from "@/hooks/use-organizations";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { useStore } from "@/hooks/use-store";
+import { Button } from "@/components/ui/button";
+import { setCurrentOrganization } from "@/app/actions/organization.actions";
 import { CreateOrganizationDialog } from "@/components/create-organization-dialog";
 
 interface OrganizationSwitcherProps {
@@ -28,21 +31,29 @@ interface OrganizationSwitcherProps {
 }
 
 export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
-  const [open, setOpen] = React.useState(false);
-  const router = useRouter();
-  const { organizations, currentOrganization, switchOrganization, loading } =
-    useOrganizations();
+  const [open, setOpen] = useState(false);
+  const [organizations, currentOrganization] = useStore(
+    useShallow(state => [
+      state.organizations,
+      state.organizations.find(org => org.id === state.currentOrganizationId),
+    ])
+  );
 
-  const handleSelect = (organizationId: string) => {
-    if (organizationId === "personal") {
-      switchOrganization(null);
+  const { toast } = useToast();
+
+  const handleSelect = async (organizationId: string) => {
+    const org = organizations.find(o => o.id === organizationId);
+    if (org) {
+      await setCurrentOrganization(org.id);
+      window.location.reload();
     } else {
-      const org = organizations.find(o => o.id === organizationId);
-      if (org) {
-        switchOrganization(org);
-      }
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Organization not found",
+      });
+      setOpen(false);
     }
-    setOpen(false);
   };
 
   // Default to "My Organization" if no current organization
@@ -83,65 +94,37 @@ export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
           <CommandInput placeholder='Search organizations...' />
           <CommandList>
             <CommandEmpty>No organization found.</CommandEmpty>
-            {organizations.length ? (
-              <CommandGroup heading='Organizations'>
-                {organizations.map(organization => (
-                  <CommandItem
-                    key={organization.id}
-                    onSelect={() => handleSelect(organization.id)}
-                    className='flex items-center gap-2'
-                  >
-                    <div className='flex h-6 w-6 items-center justify-center rounded-sm bg-primary text-primary-foreground text-xs font-semibold'>
-                      {organization.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className='flex flex-col'>
-                      <span className='text-sm font-medium'>
-                        {organization.name}
-                      </span>
-                      {organization.description && (
-                        <span className='text-xs text-muted-foreground'>
-                          {organization.description}
-                        </span>
-                      )}
-                    </div>
-                    <Check
-                      className={cn(
-                        "ml-auto h-4 w-4",
-                        currentOrganization?.id === organization.id
-                          ? "opacity-100"
-                          : "opacity-0"
-                      )}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ) : (
-              <CommandGroup heading='Personal'>
+            <CommandGroup heading='Organizations'>
+              {organizations.map(organization => (
                 <CommandItem
-                  onSelect={() => handleSelect("personal")}
+                  key={organization.id}
+                  onSelect={() => handleSelect(organization.id)}
                   className='flex items-center gap-2'
                 >
                   <div className='flex h-6 w-6 items-center justify-center rounded-sm bg-primary text-primary-foreground text-xs font-semibold'>
-                    M
+                    {organization.name.charAt(0).toUpperCase()}
                   </div>
                   <div className='flex flex-col'>
-                    <span className='text-sm font-medium'>My Organization</span>
-                    <span className='text-xs text-muted-foreground'>
-                      Personal organization
+                    <span className='text-sm font-medium'>
+                      {organization.name}
                     </span>
+                    {organization.description && (
+                      <span className='text-xs text-muted-foreground'>
+                        {organization.description}
+                      </span>
+                    )}
                   </div>
                   <Check
                     className={cn(
                       "ml-auto h-4 w-4",
-                      !currentOrganization ||
-                        currentOrganization.id === "personal"
+                      currentOrganization?.id === organization.id
                         ? "opacity-100"
                         : "opacity-0"
                     )}
                   />
                 </CommandItem>
-              </CommandGroup>
-            )}
+              ))}
+            </CommandGroup>
             <CommandSeparator />
             <CommandGroup>
               <CreateOrganizationDialog>

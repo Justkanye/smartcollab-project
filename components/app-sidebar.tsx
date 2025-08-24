@@ -13,7 +13,7 @@ import {
   User,
   Building2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import {
   DropdownMenu,
@@ -38,9 +38,11 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
-import { useAuth } from "@/contexts/auth-context";
-import { useOrganizations } from "@/hooks/use-organizations";
 import Link from "next/link";
+import { signOut } from "@/app/actions/auth.actions";
+import { useStore } from "@/hooks/use-store";
+import { useToast } from "@/hooks/use-toast";
+import { useShallow } from "zustand/shallow";
 
 // Navigation items
 const data = {
@@ -80,8 +82,27 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
-  const { user, signOut } = useAuth();
-  const { currentOrganization } = useOrganizations();
+  const [user, currentOrganization] = useStore(
+    useShallow(state => [
+      state.user,
+      state.organizations.find(org => org.id === state.currentOrganizationId),
+    ])
+  );
+  const { toast } = useToast();
+
+  const pathname = usePathname();
+
+  // Pages that don't need authentication and should not have sidebar
+  const publicPages = [
+    "/auth/signin",
+    "/auth/signup",
+    "/auth/forgot-password",
+    "/auth/reset-password",
+    "/config-check",
+    "/setup-required",
+  ];
+
+  const isPublicPage = publicPages.some(page => pathname?.startsWith(page));
 
   const handleSignOut = async () => {
     try {
@@ -89,6 +110,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       router.push("/auth/signin");
     } catch (error) {
       console.error("Error signing out:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to sign out",
+      });
     }
   };
 
@@ -103,6 +129,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleOrganizationSettings = () => {
     if (currentOrganization) {
       router.push("/organizations/settings");
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No organization selected",
+      });
     }
   };
 
@@ -129,6 +161,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const getUserEmail = () => {
     return user?.email || "";
   };
+
+  if (isPublicPage) {
+    return null;
+  }
 
   return (
     <Sidebar collapsible='icon' {...props}>

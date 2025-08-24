@@ -14,14 +14,15 @@ import { CreateTaskButton } from "./_components/create-task-button";
 import { TaskFilters } from "./_components/task-filters";
 
 interface TasksPageProps {
-  searchParams: {
+  searchParams: Promise<{
     query?: string;
     status?: string;
     priority?: string;
-  };
+  }>;
 }
 
-export default async function TasksPage({ searchParams }: TasksPageProps) {
+export default async function TasksPage(props: TasksPageProps) {
+  const searchParams = await props.searchParams;
   const { data: tasks } = await fetchTasks({
     query: searchParams.query,
     status: searchParams.status,
@@ -82,9 +83,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       {/* Search and Filters */}
       <div className='flex flex-col md:flex-row gap-4'>
         <SearchBar defaultValue={searchParams.query} />
-        <TaskFilters 
-          status={searchParams.status} 
-          priority={searchParams.priority} 
+        <TaskFilters
+          status={searchParams.status}
+          priority={searchParams.priority}
         />
       </div>
 

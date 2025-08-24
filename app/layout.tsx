@@ -1,44 +1,64 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from 'next/font/google'
-import "./globals.css"
-import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from "@/contexts/auth-context"
-import { OrganizationProvider } from "@/contexts/organization-context"
-import { ProtectedRoute } from "@/components/protected-route"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] })
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { getUser } from "./actions/auth.actions";
+import SetStore from "@/components/set-store";
+import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
+import {
+  getCurrentOrganization,
+  getOrganizations,
+} from "./actions/organization.actions";
+import SetCookie from "@/components/set-cookie";
+// import { AuthProvider } from "@/contexts/auth-context";
+// import { ProtectedRoute } from "@/components/protected-route";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SmartCollab - Project Management",
-  description: "Comprehensive project management and team collaboration platform",
-  generator: 'v0.dev'
-}
+  title: "SmartCollab - Intelligent Work Collaboration System",
+  description: "An Intelligent Collaborative Work Performance Tracking System",
+};
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
+  const { data: user } = await getUser();
+  const { data: currentOrganization } = await getCurrentOrganization();
+  const { data: organizations } = await getOrganizations();
+
   return (
-    <html lang="en">
+    <html lang='en'>
       <body className={inter.className}>
-        <AuthProvider>
-          <OrganizationProvider>
-            <MainContent>{children}</MainContent>
-          </OrganizationProvider>
-        </AuthProvider>
+        <SidebarProvider defaultOpen={true}>
+          <AppSidebar />
+          <main className='flex-1 overflow-hidden'>{children}</main>
+          {/* <AuthProvider>
+          <MainContent>{children}</MainContent>
+        </AuthProvider> */}
+        </SidebarProvider>
         <Toaster />
+        <SetStore
+          user={user}
+          organizations={organizations}
+          currentOrganizationId={currentOrganization?.id}
+        />
+        <SetCookie
+          name={CURRENT_ORGANIZATION_COOKIE}
+          value={currentOrganization?.id}
+          expiration={60 * 60 * 24 * 7}
+        />
       </body>
     </html>
-  )
+  );
 }
 
 // Helper component to conditionally apply sidebar and protection
-function MainContent({ children }: { children: React.ReactNode }) {
-  return (
-    <ProtectedRoute>
-      {children}
-    </ProtectedRoute>
-  )
-}
+// function MainContent({ children }: { children: React.ReactNode }) {
+//   return <ProtectedRoute>{children}</ProtectedRoute>;
+// }

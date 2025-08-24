@@ -1,3 +1,40 @@
+import type { Database } from "@/lib/supabase";
+
+export type Organization =
+  Database["public"]["Tables"]["organizations"]["Row"] & {
+    member_count?: number;
+    user_role?: string;
+    user_permissions?: any;
+  };
+
+export type OrganizationMember =
+  Database["public"]["Tables"]["organization_members"]["Row"] & {
+    profiles: {
+      full_name: string | null;
+      email: string;
+      avatar_url: string | null;
+    } | null;
+  };
+
+export type OrganizationInvitation = {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: string;
+  token: string;
+  expires_at: string;
+  created_at: string;
+  accepted_at: string | null;
+  invited_by: string;
+  organizations: {
+    name: string;
+  } | null;
+  invited_by_profile: {
+    full_name: string | null;
+    email: string;
+  } | null;
+};
+
 export type Status = "To Do" | "In Progress" | "In Review" | "Done";
 export type Priority = "Low" | "Medium" | "High";
 

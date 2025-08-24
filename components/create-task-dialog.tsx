@@ -21,10 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTasks } from "@/hooks/use-tasks";
-import { useProjects } from "@/hooks/use-projects";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
+import { useStore } from "@/hooks/use-store";
+import { createTask } from "@/app/actions/task.actions";
 
 interface CreateTaskDialogProps {
   children?: React.ReactNode;
@@ -46,12 +46,9 @@ export function CreateTaskDialog({
     project_id: projectId || "",
     assigned_to: "",
   });
-
-  const { createTask } = useTasks();
-  const { projects } = useProjects();
   const { toast } = useToast();
 
-  console.log({ projects });
+  const projects = useStore(state => state.projects);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

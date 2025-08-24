@@ -21,20 +21,13 @@ import { Progress } from "@/components/ui/progress";
 import { fetchProjects } from "./actions/project.actions";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
-import SetCookie from "@/components/set-cookie";
 import { getStatusBadgeVariant, getPriorityBadgeVariant } from "@/lib/utils";
 import Link from "next/link";
+import SetStore from "@/components/set-store";
 
 export default async function DashboardPage() {
-  const {
-    data: projects,
-    error: projectsError,
-    currentOrganizationId,
-  } = await fetchProjects();
+  const { data: projects } = await fetchProjects();
   const { data: tasks } = await fetchTasks();
-
-  console.log(currentOrganizationId);
 
   // Calculate statistics
   const activeProjects = projects.filter(p => p.status !== "Done").length;
@@ -301,11 +294,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <SetCookie
-        name={CURRENT_ORGANIZATION_COOKIE}
-        value={currentOrganizationId}
-        expiration={60 * 60 * 24 * 7}
-      />
+      <SetStore tasks={tasks} projects={projects} />
     </div>
   );
 }
