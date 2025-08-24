@@ -13,6 +13,7 @@ import {
   getOrganizations,
 } from "./actions/organization.actions";
 import SetCookie from "@/components/set-cookie";
+import { ThemeProvider } from "@/components/theme-provider";
 // import { AuthProvider } from "@/contexts/auth-context";
 // import { ProtectedRoute } from "@/components/protected-route";
 
@@ -34,26 +35,28 @@ export default async function RootLayout({
   console.dir({ user }, { depth: 5 });
 
   return (
-    <html lang='en'>
+    <html lang='en' suppressHydrationWarning>
       <body className={inter.className}>
-        <SidebarProvider defaultOpen={true}>
-          <AppSidebar />
-          <main className='flex-1 overflow-hidden'>{children}</main>
-          {/* <AuthProvider>
-          <MainContent>{children}</MainContent>
-        </AuthProvider> */}
-        </SidebarProvider>
-        <Toaster />
-        <SetStore
-          user={user}
-          organizations={organizations}
-          currentOrganizationId={currentOrganization?.id}
-        />
-        <SetCookie
-          name={CURRENT_ORGANIZATION_COOKIE}
-          value={currentOrganization?.id}
-          expiration={60 * 60 * 24 * 7}
-        />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <SidebarProvider defaultOpen={true}>
+            <AppSidebar />
+            <main className='flex-1 overflow-hidden'>{children}</main>
+            {/* <AuthProvider>
+              <MainContent>{children}</MainContent>
+            </AuthProvider> */}
+          </SidebarProvider>
+          <Toaster />
+          <SetStore
+            user={user}
+            organizations={organizations}
+            currentOrganizationId={currentOrganization?.id}
+          />
+          <SetCookie
+            name={CURRENT_ORGANIZATION_COOKIE}
+            value={currentOrganization?.id}
+            expiration={60 * 60 * 24 * 7}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );

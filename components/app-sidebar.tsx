@@ -43,6 +43,7 @@ import { signOut } from "@/app/actions/auth.actions";
 import { useStore } from "@/hooks/use-store";
 import { useToast } from "@/hooks/use-toast";
 import { useShallow } from "zustand/shallow";
+import { ThemeToggle } from "./theme-toggle";
 
 // Navigation items
 const data = {
@@ -269,6 +270,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     Organization Settings
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5">
+                  <div className="flex items-center justify-between px-2">
+                    <span className="text-xs text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}
