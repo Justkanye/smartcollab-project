@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +25,6 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [configError, setConfigError] = useState<string | null>(null);
-  const router = useRouter();
 
   // Check configuration on mount
   useEffect(() => {
@@ -75,7 +73,7 @@ export default function SignIn() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/");
+      window.location.href = "/";
     }
   };
 

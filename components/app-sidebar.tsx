@@ -107,7 +107,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.push("/auth/signin");
+      window.location.href = "/auth/signin";
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -272,7 +272,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className='gap-2 text-red-600'
+                  className='gap-2 text-red-600 cursor-pointer'
                 >
                   <LogOut className='h-4 w-4' />
                   Log out

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { useStore, StoreType } from "@/hooks/use-store";
+import { useShallow } from "zustand/shallow";
 
 type SetStoreProps = {
   tasks?: StoreType["tasks"];
@@ -19,12 +20,27 @@ const SetStore = ({
   currentOrganizationId,
   user,
 }: SetStoreProps) => {
+  const [
+    setTasks,
+    setProjects,
+    setOrganizations,
+    setCurrentOrganizationId,
+    setUser,
+  ] = useStore(
+    useShallow(state => [
+      state.setTasks,
+      state.setProjects,
+      state.setOrganizations,
+      state.setCurrentOrganizationId,
+      state.setUser,
+    ])
+  );
   useEffect(() => {
-    if (tasks) useStore.setState({ tasks });
-    if (projects) useStore.setState({ projects });
-    if (organizations) useStore.setState({ organizations });
-    if (currentOrganizationId) useStore.setState({ currentOrganizationId });
-    if (user) useStore.setState({ user });
+    if (tasks) setTasks(tasks);
+    if (projects) setProjects(projects);
+    if (organizations) setOrganizations(organizations);
+    if (currentOrganizationId) setCurrentOrganizationId(currentOrganizationId);
+    if (user) setUser(user);
   }, []);
   return null;
 };

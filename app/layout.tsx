@@ -31,6 +31,7 @@ export default async function RootLayout({
   const { data: user } = await getUser();
   const { data: currentOrganization } = await getCurrentOrganization();
   const { data: organizations } = await getOrganizations();
+  console.dir({ user }, { depth: 5 });
 
   return (
     <html lang='en'>

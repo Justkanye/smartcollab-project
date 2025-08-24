@@ -1,11 +1,11 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 
+import { removeCookie } from "./cookie.actions";
 import { createClient } from "@/lib/superbase.server";
 import { CURRENT_ORGANIZATION_COOKIE } from "@/lib/constants";
+import { getCurrentOrganization } from "./organization.actions";
 
 export async function login(email: string, password: string) {
   const supabase = await createClient();
@@ -24,11 +24,7 @@ export async function login(email: string, password: string) {
   }
 
   //   If an organization exists for the user, set it as the current organization
-  const { data: organization } = await supabase
-    .from("organizations")
-    .select("*")
-    .eq("created_by", user.user.id)
-    .single();
+  const { data: organization } = await getCurrentOrganization();
 
   if (organization) {
     const cookieStore = await cookies();
@@ -40,8 +36,7 @@ export async function login(email: string, password: string) {
     });
   }
 
-  revalidatePath("/", "layout");
-  redirect("/");
+  return { error: null };
 }
 
 export async function signup(
@@ -65,18 +60,13 @@ export async function signup(
 
   const { error } = await supabase.auth.signUp(data);
 
-  if (error) {
-    return { error };
-  }
-
-  revalidatePath("/", "layout");
-  redirect("/");
+  return { error };
 }
 
 export const signOut = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/auth/signin");
+  await removeCookie(CURRENT_ORGANIZATION_COOKIE);
 };
 
 export const getUser = async () => {
