@@ -70,31 +70,18 @@ export async function createOrganization(orgData: {
       return { data: null, error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
-      .from("organizations")
-      .insert([
-        {
-          name: orgData.name,
-          description: orgData.description,
-          created_by: user.id,
-        },
-      ])
-      .select()
-      .single();
+    // Start a transaction
+    const { data, error } = await supabase.rpc('create_organization_with_owner', {
+      org_name: orgData.name,
+      org_description: orgData.description || null,
+      owner_email: user.email,
+      owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+    });
 
     if (error) {
+      console.error('Error creating organization with owner:', error);
       return { data: null, error: error.message };
     }
-
-    // Add the creator as an admin member
-    await supabase.from("organization_members").insert([
-      {
-        organization_id: data.id,
-        user_id: user.id,
-        role: "admin",
-        status: "active",
-      },
-    ]);
 
     revalidatePath("/");
     return { data, error: null };

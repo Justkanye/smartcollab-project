@@ -1,5 +1,8 @@
 import type { Database } from "@/lib/supabase";
 
+type TeamRole = 'admin' | 'member' | 'viewer';
+type TeamMemberStatus = 'active' | 'inactive' | 'pending';
+
 export type Organization =
   Database["public"]["Tables"]["organizations"]["Row"] & {
     member_count?: number;
@@ -68,5 +71,57 @@ export interface Task {
   project?: {
     id: string;
     name: string;
+  };
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description: string | null;
+  organization_id: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  member_count?: number;
+  is_default?: boolean;
+}
+
+export interface TeamMember {
+  id: string;
+  team_id: string;
+  user_id: string;
+  role: TeamRole;
+  status: TeamMemberStatus;
+  joined_at: string;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+  team?: {
+    name: string;
+    organization_id: string;
+  };
+}
+
+export interface TeamInvitation {
+  id: string;
+  team_id: string;
+  email: string;
+  role: TeamRole;
+  token: string;
+  expires_at: string;
+  created_at: string;
+  invited_by: string;
+  team?: {
+    name: string;
+    organization_id: string;
+  };
+  invited_by_profile?: {
+    full_name: string | null;
+    email: string;
   };
 }
