@@ -14,6 +14,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
   const { data: team, error } = await getTeam(params.teamId);
 
   if (error || !team) {
+    console.error("Error fetching team:", error);
     notFound();
   }
 

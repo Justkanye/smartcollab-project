@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,13 +19,25 @@ import { Zap, Loader2, XCircle, Mail, Lock } from "lucide-react";
 import { validateEnvironment } from "@/lib/config-validation";
 import { ConfigStatus } from "@/components/config-status";
 import { login } from "@/app/actions/auth.actions";
+import { useRouter } from "next/navigation";
 
 export default function SignIn() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [configError, setConfigError] = useState<string | null>(null);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+
+  // Check for invitation token in URL
+  useEffect(() => {
+    const token = searchParams.get('invite_token');
+    if (token) {
+      setInviteToken(token);
+    }
+  }, [searchParams]);
 
   // Check configuration on mount
   useEffect(() => {
@@ -40,20 +53,39 @@ export default function SignIn() {
     }
   }, []);
 
+  // Show invitation notice if present
+  const renderInviteNotice = () => {
+    if (!inviteToken) return null;
+    
+    return (
+      <div className="mb-6">
+        <Alert>
+          <AlertDescription className="text-center">
+            You've been invited to join a team. Please sign in to continue.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  };
+
   // If there's a configuration error, show it
   if (configError) {
     return (
       <div className='min-h-screen flex items-center justify-center p-4'>
         <div className='w-full max-w-2xl space-y-4'>
           <Card>
-            <CardHeader className='text-center'>
-              <div className='flex items-center justify-center mb-4'>
-                <XCircle className='h-12 w-12 text-red-600' />
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Zap className="h-8 w-8 text-primary mr-2" />
+                <h1 className="text-2xl font-bold">SmartCollab</h1>
               </div>
-              <CardTitle className='text-xl text-red-600'>
-                Configuration Error
-              </CardTitle>
-              <CardDescription>{configError}</CardDescription>
+              <CardTitle>Sign In</CardTitle>
+              <CardDescription>
+                {inviteToken 
+                  ? "Sign in to accept your team invitation" 
+                  : "Enter your credentials to access your account"}
+              </CardDescription>
+              {renderInviteNotice()}
             </CardHeader>
           </Card>
           <ConfigStatus />
@@ -67,13 +99,22 @@ export default function SignIn() {
     setLoading(true);
     setError("");
 
-    const { error } = await login(email, password);
+    try {
+      const { error } = await login(email, password);
+      if (error) {
+        setError(error.message || "Invalid credentials");
+        return;
+      }
 
-    if (error) {
-      setError(error.message);
+      // If there was an invite token, redirect to accept it
+      if (inviteToken) {
+        router.push(`/invite/${inviteToken}`);
+        return;
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.");
+    } finally {
       setLoading(false);
-    } else {
-      window.location.href = "/";
     }
   };
 

@@ -1,66 +1,52 @@
-import { notFound } from "next/navigation";
-import { getTeamMembers, getTeam } from "@/app/actions/team.actions";
-import { TeamMemberList } from "@/components/teams/team-member-list";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import Link from "next/link";
-import { getUser } from "@/app/actions/auth.actions";
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import { getTeam } from '@/app/actions/team.actions';
+import { getUser } from '@/app/actions/auth.actions';
+import { TeamMembersManager } from './_components/team-members-manager';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { Loading } from '@/components/ui/loading';
 
-export default async function TeamMembersPage({
-  params,
-}: {
-  params: { teamId: string };
-}) {
+// Separate component for the main content to handle loading states
+async function TeamMembersContent({ teamId }: { teamId: string }) {
   const { data: user } = await getUser();
 
   if (!user) {
     notFound();
   }
 
-  // Get the team and members in parallel
-  const [teamResult, membersResult] = await Promise.all([
-    getTeam(params.teamId),
-    getTeamMembers(params.teamId),
-  ]);
+  // Get the team
+  const teamResult = await getTeam(teamId);
 
   if (!teamResult.data) {
     notFound();
   }
 
-  const team = teamResult.data;
-  const members = membersResult.data || [];
-  const error = teamResult.error || membersResult.error;
+  return <TeamMembersManager teamId={teamId} />;
+}
 
+export default function TeamMembersPage({
+  params,
+}: {
+  params: { teamId: string };
+}) {
   return (
-    <div className='container mx-auto py-8'>
-      <div className='flex items-center justify-between mb-8'>
-        <div>
-          <h1 className='text-3xl font-bold tracking-tight'>
-            {team.name} Team
-          </h1>
-          <p className='text-muted-foreground'>
-            Manage team members and their permissions
-          </p>
-        </div>
-        <Button asChild>
-          <Link href={`/teams/${team.id}/members/invite`}>
-            <Plus className='mr-2 h-4 w-4' />
-            Add Member
-          </Link>
-        </Button>
-      </div>
-
-      {error && (
-        <div className='mb-6 p-4 bg-destructive/10 text-destructive rounded-md'>
-          {error}
-        </div>
-      )}
-
-      <TeamMemberList
-        teamId={team.id}
-        initialMembers={members}
-        currentUserId={user.id}
-      />
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <ErrorBoundary
+        fallback={
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Team Members</h1>
+            <div className="rounded-md border border-destructive p-4">
+              <p className="text-destructive">
+                Failed to load team members. Please try again later.
+              </p>
+            </div>
+          </div>
+        }
+      >
+        <Suspense fallback={<Loading text="Loading team information..." />}>
+          <TeamMembersContent teamId={params.teamId} />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }

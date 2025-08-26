@@ -14,26 +14,41 @@ export async function getTeams(organizationId: string) {
       return { data: [], error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
-      .from("teams")
-      .select(
-        `
-        *,
-        team_members!inner(
-          user_id,
-          role
-        )
-      `
-      )
-      .eq("organization_id", organizationId)
-      .eq("team_members.user_id", user.id);
+    // First, get all team IDs where the user is a member
+    const { data: userTeams, error: userTeamsError } = await supabase
+      .from("team_members")
+      .select("team_id, role")
+      .eq("user_id", user.id);
 
-    if (error) {
-      console.error("Error fetching teams:", error);
-      return { data: [], error: error.message };
+    if (userTeamsError) {
+      console.error("Error fetching user's teams:", userTeamsError);
+      return { data: [], error: userTeamsError.message };
     }
 
-    return { data: data as Team[], error: null };
+    if (!userTeams || userTeams.length === 0) {
+      return { data: [], error: null }; // No teams found for user
+    }
+
+    // Then get the full team details for those teams in the organization
+    const teamIds = userTeams.map(tm => tm.team_id);
+    const { data: teams, error: teamsError } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("organization_id", organizationId)
+      .in("id", teamIds);
+
+    if (teamsError) {
+      console.error("Error fetching teams:", teamsError);
+      return { data: [], error: teamsError.message };
+    }
+
+    // Add the user's role to each team
+    const teamsWithRole = teams.map(team => ({
+      ...team,
+      role: userTeams.find(tm => tm.team_id === team.id)?.role || 'member'
+    }));
+
+    return { data: teamsWithRole as Team[], error: null };
   } catch (error) {
     console.error("Error in getTeams:", error);
     return { data: [], error: "Failed to fetch teams" };
@@ -49,28 +64,37 @@ export async function getTeam(teamId: string) {
       return { data: null, error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
-      .from("teams")
-      .select(
-        `
-        *,
-        team_members!inner(
-          user_id,
-          role
-        )
-      `
-      )
-      .eq("id", teamId)
-      .eq("team_members.user_id", user.id)
-      .limit(1)
+    // First, check if the user is a member of this team
+    const { data: membership, error: membershipError } = await supabase
+      .from("team_members")
+      .select("role")
+      .eq("team_id", teamId)
+      .eq("user_id", user.id)
       .single();
 
-    if (error) {
-      console.error("Error fetching team:", error);
-      return { data: null, error: error.message };
+    if (membershipError || !membership) {
+      return { data: null, error: "You are not a member of this team" };
     }
 
-    return { data: data as Team, error: null };
+    // Then get the team details
+    const { data: team, error: teamError } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("id", teamId)
+      .single();
+
+    if (teamError) {
+      console.error("Error fetching team:", teamError);
+      return { data: null, error: teamError.message };
+    }
+
+    // Add the user's role to the team
+    const teamWithRole = {
+      ...team,
+      role: membership.role
+    };
+
+    return { data: teamWithRole as Team, error: null };
   } catch (error) {
     console.error("Error in getTeam:", error);
     return { data: null, error: "Failed to fetch team" };
