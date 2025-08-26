@@ -71,15 +71,19 @@ export async function createOrganization(orgData: {
     }
 
     // Start a transaction
-    const { data, error } = await supabase.rpc('create_organization_with_owner', {
-      org_name: orgData.name,
-      org_description: orgData.description || null,
-      owner_email: user.email,
-      owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
-    });
+    const { data, error } = await supabase.rpc(
+      "create_organization_with_owner",
+      {
+        org_name: orgData.name,
+        owner_email: user.email,
+        owner_name:
+          user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+        org_description: orgData.description || null,
+      }
+    );
 
     if (error) {
-      console.error('Error creating organization with owner:', error);
+      console.error("Error creating organization with owner:", error);
       return { data: null, error: error.message };
     }
 
@@ -151,17 +155,19 @@ export async function getCurrentOrganization() {
       CURRENT_ORGANIZATION_COOKIE
     );
     const createAndSetCurrentOrg = async () => {
-      const { data: newOrganization, error: createError } = await supabase
-        .from("organizations")
-        .insert([
-          {
-            name: "My Organization",
-            description: "Personal Organization",
-            created_by: user.id,
-          },
-        ])
-        .select()
-        .single();
+      // Start a transaction
+      const { data: newOrganization, error: createError } = await supabase.rpc(
+        "create_organization_with_owner",
+        {
+          org_name: "My Organization",
+          owner_email: user.email,
+          owner_name:
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0] ||
+            "User",
+          org_description: "Personal Organization",
+        }
+      );
 
       if (createError) {
         console.error("Error creating default organization:", createError);
@@ -208,7 +214,7 @@ export async function getCurrentOrganization() {
           return await createAndSetCurrentOrg();
         } else {
           console.error(
-            "PGRST116 Error fetching current organization:",
+            "Non-PGRST116 Error fetching current organization:",
             currentOrganizationRes.error
           );
           return { data: null, error: currentOrganizationRes.error.message };

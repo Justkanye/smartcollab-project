@@ -61,7 +61,7 @@ export function OrganizationSwitcher({ className }: OrganizationSwitcherProps) {
   const displayDescription =
     currentOrganization?.description || currentOrganization
       ? "Organization"
-      : "Personal organization";
+      : "No organization";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

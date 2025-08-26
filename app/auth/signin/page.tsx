@@ -78,9 +78,9 @@ export default function SignIn() {
   };
 
   return (
-    <div className='min-h-screen flex items-center justify-center p-4'>
+    <div className='min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800'>
       <div className='w-full max-w-md'>
-        <Card className='shadow-2xl border-0 bg-white/80 backdrop-blur-sm'>
+        <Card className='shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm dark:border-gray-700'>
           <CardHeader className='text-center space-y-4 pb-6'>
             <div className='flex items-center justify-center'>
               <div className='flex aspect-square size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 text-white shadow-lg'>
@@ -88,10 +88,10 @@ export default function SignIn() {
               </div>
             </div>
             <div className='space-y-2'>
-              <CardTitle className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+              <CardTitle className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-400 bg-clip-text text-transparent'>
                 Welcome back
               </CardTitle>
-              <CardDescription className='text-base text-muted-foreground'>
+              <CardDescription className='text-base text-muted-foreground dark:text-gray-300'>
                 Sign in to your SmartCollab account
               </CardDescription>
             </div>

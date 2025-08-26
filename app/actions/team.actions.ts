@@ -40,6 +40,43 @@ export async function getTeams(organizationId: string) {
   }
 }
 
+export async function getTeam(teamId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: user } = await getUser();
+
+    if (!user) {
+      return { data: null, error: "User not authenticated" };
+    }
+
+    const { data, error } = await supabase
+      .from("teams")
+      .select(
+        `
+        *,
+        team_members!inner(
+          user_id,
+          role
+        )
+      `
+      )
+      .eq("id", teamId)
+      .eq("team_members.user_id", user.id)
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error("Error fetching team:", error);
+      return { data: null, error: error.message };
+    }
+
+    return { data: data as Team, error: null };
+  } catch (error) {
+    console.error("Error in getTeam:", error);
+    return { data: null, error: "Failed to fetch team" };
+  }
+}
+
 export async function createTeam(teamData: {
   name: string;
   description?: string;
@@ -90,10 +127,7 @@ export async function createTeam(teamData: {
   }
 }
 
-export async function updateTeam(
-  teamId: string,
-  updates: Partial<Team>
-) {
+export async function updateTeam(teamId: string, updates: Partial<Team>) {
   try {
     const supabase = await createClient();
     const { data: user } = await getUser();
@@ -145,10 +179,7 @@ export async function deleteTeam(teamId: string) {
       return { error: "Team not found" };
     }
 
-    const { error } = await supabase
-      .from("teams")
-      .delete()
-      .eq("id", teamId);
+    const { error } = await supabase.from("teams").delete().eq("id", teamId);
 
     if (error) {
       console.error("Error deleting team:", error);
@@ -199,7 +230,11 @@ export async function getTeamMembers(teamId: string) {
   }
 }
 
-export async function addTeamMember(teamId: string, userId: string, role: string = 'member') {
+export async function addTeamMember(
+  teamId: string,
+  userId: string,
+  role: string = "member"
+) {
   try {
     const supabase = await createClient();
     const { data: user } = await getUser();
@@ -315,7 +350,7 @@ export async function removeTeamMember(teamId: string, userId: string) {
 export async function inviteTeamMember(
   teamId: string,
   email: string,
-  role: string = 'member'
+  role: string = "member"
 ) {
   try {
     const supabase = await createClient();
@@ -327,7 +362,7 @@ export async function inviteTeamMember(
 
     // Check if user is already a member
     const { data: existingMember } = await supabase.rpc(
-      'check_team_membership',
+      "check_team_membership",
       { p_team_id: teamId, p_email: email }
     );
 
@@ -345,11 +380,14 @@ export async function inviteTeamMember(
       .single();
 
     if (existingInvite) {
-      return { data: null, error: "An invitation is already pending for this email" };
+      return {
+        data: null,
+        error: "An invitation is already pending for this email",
+      };
     }
 
     // Generate a token
-    const token = require('crypto').randomBytes(32).toString('hex');
+    const token = require("crypto").randomBytes(32).toString("hex");
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
 

@@ -1,9 +1,9 @@
 -- Function to create an organization with an owner and default team
 CREATE OR REPLACE FUNCTION create_organization_with_owner(
   org_name TEXT,
-  org_description TEXT DEFAULT NULL,
   owner_email TEXT,
-  owner_name TEXT
+  owner_name TEXT,
+  org_description TEXT DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -15,7 +15,7 @@ DECLARE
   default_team_id UUID;
   result JSONB;
 BEGIN
-  -- Get the user ID from auth.users
+  -- Get the user ID from auth.users and ensure a profile exists
   SELECT id INTO owner_id 
   FROM auth.users 
   WHERE email = owner_email
@@ -24,6 +24,11 @@ BEGIN
   IF owner_id IS NULL THEN
     RAISE EXCEPTION 'User with email % not found', owner_email;
   END IF;
+  
+  -- Ensure a profile exists for this user
+  INSERT INTO public.profiles (id, email, full_name, created_at, updated_at)
+  VALUES (owner_id, owner_email, owner_name, NOW(), NOW())
+  ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
 
   -- Start transaction
   BEGIN
@@ -81,14 +86,12 @@ BEGIN
       team_id,
       user_id,
       role,
-      joined_at,
       created_at,
       updated_at
     ) VALUES (
       default_team_id,
       owner_id,
       'admin',
-      NOW(),
       NOW(),
       NOW()
     );
@@ -105,7 +108,7 @@ BEGIN
       new_org_id,
       'Getting Started',
       'Default project to help you get started',
-      'active',
+      'In Progress',
       owner_id,
       NOW()
     );

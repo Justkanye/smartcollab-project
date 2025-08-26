@@ -179,13 +179,25 @@ export default async function ProjectDetailsPage({
                   Create Task
                 </Button>
               </CreateTaskDialog>
-              <Button variant='outline' className='w-full justify-start gap-2'>
-                <Users className='h-4 w-4' />
-                Manage Team
+              <Button
+                variant='outline'
+                className='w-full justify-start gap-2'
+                asChild
+              >
+                <Link href={`/teams`}>
+                  <Users className='h-4 w-4' />
+                  Manage Teams
+                </Link>
               </Button>
-              <Button variant='outline' className='w-full justify-start gap-2'>
-                <Clock className='h-4 w-4' />
-                Log Time
+              <Button
+                variant='outline'
+                className='w-full justify-start gap-2'
+                asChild
+              >
+                <Link href={`/reports`}>
+                  <Clock className='h-4 w-4' />
+                  Log Time
+                </Link>
               </Button>
             </CardContent>
           </Card>

@@ -64,8 +64,8 @@ const data = {
       icon: CheckSquare,
     },
     {
-      title: "Team",
-      url: "/team",
+      title: "Teams",
+      url: "/teams",
       icon: Users,
     },
     {
