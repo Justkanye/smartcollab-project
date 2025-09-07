@@ -24,7 +24,7 @@ const envSchema = z.object({
 });
 
 // Validate environment variables
-const env = envSchema.safeParse({
+const _env = envSchema.safeParse({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -32,12 +32,16 @@ const env = envSchema.safeParse({
   EMAIL_DOMAIN: process.env.EMAIL_DOMAIN,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NODE_ENV: process.env.NODE_ENV,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  OPENAI_MODEL: process.env.OPENAI_MODEL,
+  OPENAI_TEMPERATURE: process.env.OPENAI_TEMPERATURE,
+  OPENAI_MAX_TOKENS: process.env.OPENAI_MAX_TOKENS,
 });
 
 // Log all errors if validation fails
-if (!env.success) {
-  console.error('❌ Invalid environment variables:', env.error.format());
+if (!_env.success) {
+  console.error('❌ Invalid environment variables:', _env.error.format());
   throw new Error('Invalid environment variables');
 }
 
-export const env = env.data;
+export const env = _env.data;
